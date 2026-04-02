@@ -49,6 +49,7 @@ export interface DiaryEntry {
 export interface CalendarDeco {
   id: string;
   emoji: string;
+  catStickerId?: string; // cat01-cat32 if using cat sticker image
   x: number;
   y: number;
   scale: number;

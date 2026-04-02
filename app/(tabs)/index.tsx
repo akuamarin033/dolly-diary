@@ -1,5 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
-import { Text, View, ScrollView, Pressable, StyleSheet, Dimensions } from "react-native";
+import {
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  Modal,
+  FlatList,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -7,8 +16,17 @@ import { Calendar } from "@/components/calendar";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEntriesForMonth, MOOD_EMOJI, type CalendarDeco } from "@/lib/diary-storage";
+import { CAT_STICKERS } from "@/lib/cat-stickers";
 
 const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
+
+const QUICK_EMOJIS = [
+  "🌸", "⭐", "❤️", "🎀", "✨", "🌈", "🍰", "🐱",
+  "🌙", "🔥", "💖", "🦋", "🎵", "📝", "☀️", "🍓",
+  "💫", "🎨", "🧁", "🌺", "😊", "🥰", "🤩", "😎",
+];
+
+type DecoTab = "icon" | "cat";
 
 export default function CalendarScreen() {
   const colors = useColors();
@@ -19,6 +37,8 @@ export default function CalendarScreen() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showDecoModal, setShowDecoModal] = useState(false);
+  const [decoTab, setDecoTab] = useState<DecoTab>("icon");
 
   const entryDates = useMemo(() => getEntriesForMonth(entries, year, month), [entries, year, month]);
 
@@ -83,20 +103,68 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
+  // Add emoji deco
+  const handleAddEmojiDeco = useCallback(
+    (emoji: string) => {
+      if (calendarDecos.length >= 20) return;
+      const newDeco: CalendarDeco = {
+        id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        emoji,
+        x: 10 + Math.random() * 70,
+        y: 10 + Math.random() * 70,
+        scale: 1.0,
+      };
+      setCalendarDecos([...calendarDecos, newDeco]);
+      setShowDecoModal(false);
+    },
+    [calendarDecos, setCalendarDecos]
+  );
+
+  // Add cat deco
+  const handleAddCatDeco = useCallback(
+    (catId: string) => {
+      if (calendarDecos.length >= 20) return;
+      const newDeco: CalendarDeco = {
+        id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        emoji: "",
+        catStickerId: catId,
+        x: 10 + Math.random() * 70,
+        y: 10 + Math.random() * 70,
+        scale: 1.0,
+      };
+      setCalendarDecos([...calendarDecos, newDeco]);
+      setShowDecoModal(false);
+    },
+    [calendarDecos, setCalendarDecos]
+  );
+
   return (
     <ScreenContainer className="px-4 pt-2">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header with streak */}
         <View style={styles.titleRow}>
           <Text style={[styles.title, { color: colors.foreground }]}>カレンダー</Text>
-          {streak.currentStreak > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={[styles.streakText, { color: colors.warning }]}>
-                {streak.currentStreak}日連続
-              </Text>
-            </View>
-          )}
+          <View style={styles.headerRight}>
+            {streak.currentStreak > 0 && (
+              <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
+                <Text style={styles.streakEmoji}>🔥</Text>
+                <Text style={[styles.streakText, { color: colors.warning }]}>
+                  {streak.currentStreak}日連続
+                </Text>
+              </View>
+            )}
+            {/* Deco add button */}
+            <Pressable
+              onPress={() => setShowDecoModal(true)}
+              style={({ pressed }) => [
+                styles.addDecoBtn,
+                { backgroundColor: colors.primary },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Text style={styles.addDecoBtnText}>+ デコ</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Calendar with deco overlay */}
@@ -126,7 +194,15 @@ export default function CalendarScreen() {
                 },
               ]}
             >
-              <Text style={styles.decoEmoji}>{deco.emoji}</Text>
+              {deco.catStickerId ? (
+                <Image
+                  source={CAT_STICKERS.find((c) => c.id === deco.catStickerId)?.source}
+                  style={styles.decoCatImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.decoEmoji}>{deco.emoji}</Text>
+              )}
             </Pressable>
           ))}
         </View>
@@ -185,6 +261,98 @@ export default function CalendarScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Deco add modal */}
+      <Modal
+        visible={showDecoModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDecoModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowDecoModal(false)}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: colors.background }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHandle}>
+              <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
+            </View>
+
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>デコを追加</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.muted }]}>
+              {calendarDecos.length}/20 配置中
+            </Text>
+
+            {/* Tab switch: アイコン / ネコ */}
+            <View style={styles.decoTabRow}>
+              <Pressable
+                onPress={() => setDecoTab("icon")}
+                style={({ pressed }) => [
+                  styles.decoTabBtn,
+                  {
+                    backgroundColor: decoTab === "icon" ? colors.primary : colors.surface,
+                    borderColor: decoTab === "icon" ? colors.primary : colors.border,
+                  },
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Text style={[styles.decoTabText, { color: decoTab === "icon" ? "#FFFFFF" : colors.foreground }]}>
+                  🎨 アイコン
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setDecoTab("cat")}
+                style={({ pressed }) => [
+                  styles.decoTabBtn,
+                  {
+                    backgroundColor: decoTab === "cat" ? colors.primary : colors.surface,
+                    borderColor: decoTab === "cat" ? colors.primary : colors.border,
+                  },
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Text style={[styles.decoTabText, { color: decoTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
+                  🐱 ネコ
+                </Text>
+              </Pressable>
+            </View>
+
+            {decoTab === "icon" ? (
+              <View style={styles.modalGrid}>
+                {QUICK_EMOJIS.map((emoji, i) => (
+                  <Pressable
+                    key={i}
+                    onPress={() => handleAddEmojiDeco(emoji)}
+                    style={({ pressed }) => [
+                      styles.modalCell,
+                      { backgroundColor: pressed ? colors.border : colors.surface },
+                    ]}
+                  >
+                    <Text style={styles.modalEmoji}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <ScrollView style={styles.catScrollArea} showsVerticalScrollIndicator={false}>
+                <View style={styles.modalCatGrid}>
+                  {CAT_STICKERS.map((cat) => (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => handleAddCatDeco(cat.id)}
+                      style={({ pressed }) => [
+                        styles.modalCatCell,
+                        { backgroundColor: pressed ? colors.border : colors.surface },
+                      ]}
+                    >
+                      <Image source={cat.source} style={styles.modalCatImage} resizeMode="contain" />
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -199,6 +367,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   streakBadge: {
     flexDirection: "row",
@@ -215,6 +388,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  addDecoBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  addDecoBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   calendarWrapper: {
     position: "relative",
   },
@@ -224,6 +407,10 @@ const styles = StyleSheet.create({
   },
   decoEmoji: {
     fontSize: 28,
+  },
+  decoCatImage: {
+    width: 40,
+    height: 40,
   },
   motivCard: {
     marginTop: 12,
@@ -278,5 +465,90 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    maxHeight: "70%",
+  },
+  modalHandle: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  handleBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  decoTabRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  decoTabBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  decoTabText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  modalGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+  },
+  modalCell: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalEmoji: {
+    fontSize: 28,
+  },
+  catScrollArea: {
+    maxHeight: 300,
+  },
+  modalCatGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+    paddingBottom: 16,
+  },
+  modalCatCell: {
+    width: 68,
+    height: 68,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCatImage: {
+    width: 52,
+    height: 52,
   },
 });
