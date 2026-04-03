@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, Pressable, Linking } from "react-native";
 import { useAds } from "@/lib/ad-context";
 import { useColors } from "@/hooks/use-colors";
+import { useI18n } from "@/lib/i18n";
 
 export function BannerAd() {
   const { isAdFree } = useAds();
   const colors = useColors();
+  const { t } = useI18n();
 
   if (isAdFree) return null;
 
@@ -15,7 +17,7 @@ export function BannerAd() {
       </View>
       <View style={styles.content}>
         <Text style={[styles.adTitle, { color: colors.foreground }]}>Dolly's Diary Premium</Text>
-        <Text style={[styles.adSubtitle, { color: colors.muted }]}>広告を非表示にして快適に日記を書こう</Text>
+        <Text style={[styles.adSubtitle, { color: colors.muted }]}>{t("ad.premiumDesc")}</Text>
       </View>
       <Pressable
         style={({ pressed }) => [
@@ -24,7 +26,7 @@ export function BannerAd() {
           pressed && { opacity: 0.8 },
         ]}
       >
-        <Text style={styles.adButtonText}>詳細</Text>
+        <Text style={styles.adButtonText}>{t("ad.details")}</Text>
       </Pressable>
     </View>
   );

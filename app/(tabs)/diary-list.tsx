@@ -9,11 +9,13 @@ import { type DiaryEntry } from "@/lib/diary-storage";
 import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
+import { useI18n } from "@/lib/i18n";
 
 export default function DiaryListScreen() {
   const colors = useColors();
   const router = useRouter();
   const { entries, loading, search } = useDiary();
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DiaryEntry[] | null>(null);
 
@@ -112,7 +114,7 @@ export default function DiaryListScreen() {
       <View style={styles.emptyContainer}>
         <Text style={{ fontSize: 48 }}>📔</Text>
         <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-          {query ? "検索結果がありません" : "日記がまだありません"}
+          {query ? t("list.noResults") : t("list.empty")}
         </Text>
         <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
           {query ? "別のキーワードで検索してみてください" : "カレンダーから日付を選んで日記を書きましょう"}
@@ -124,7 +126,7 @@ export default function DiaryListScreen() {
 
   return (
     <ScreenContainer className="px-4 pt-2">
-      <Text style={[styles.title, { color: colors.foreground }]}>日記一覧</Text>
+      <Text style={[styles.title, { color: colors.foreground }]}>{t("list.title")}</Text>
 
       <View
         style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -132,7 +134,7 @@ export default function DiaryListScreen() {
         <Text style={{ fontSize: 16, color: colors.muted }}>🔍</Text>
         <TextInput
           style={[styles.searchInput, { color: colors.foreground }]}
-          placeholder="日記を検索..."
+          placeholder={t("list.searchPlaceholder")}
           placeholderTextColor={colors.muted}
           value={query}
           onChangeText={handleSearch}

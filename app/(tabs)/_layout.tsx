@@ -5,10 +5,12 @@ import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useI18n } from "@/lib/i18n";
 
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 56 + bottomPadding;
 
@@ -31,35 +33,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "カレンダー",
+          title: t("tab.calendar"),
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar" color={color} />,
         }}
       />
       <Tabs.Screen
         name="write-diary"
         options={{
-          title: "日記",
+          title: t("tab.diary"),
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="book.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="diary-list"
         options={{
-          title: "一覧",
+          title: t("tab.list"),
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="list.bullet" color={color} />,
         }}
       />
       <Tabs.Screen
         name="stickers"
         options={{
-          title: "スタンプ",
+          title: t("tab.stamps"),
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="face.smiling" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "プロフィール",
+          title: t("tab.profile"),
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.fill" color={color} />,
         }}
       />

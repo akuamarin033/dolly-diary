@@ -2,8 +2,10 @@ import React, { useMemo } from "react";
 import { Text, View, Pressable, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { formatDate } from "@/lib/diary-storage";
+import { useI18n } from "@/lib/i18n";
 
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // Month-specific background colors (soft pastel tones)
 const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
@@ -41,10 +43,13 @@ export function Calendar({
   onNextMonth,
 }: CalendarProps) {
   const colors = useColors();
+  const { language } = useI18n();
   const today = formatDate(new Date());
   const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
 
-  const monthLabel = `${year}年${month + 1}月`;
+  const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
+  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthLabel = language === "en" ? `${MONTH_NAMES_EN[month]} ${year}` : `${year}年${month + 1}月`;
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();

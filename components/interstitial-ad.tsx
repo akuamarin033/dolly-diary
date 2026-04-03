@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Modal, Image } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useI18n } from "@/lib/i18n";
 
 interface InterstitialAdProps {
   visible: boolean;
@@ -9,6 +10,7 @@ interface InterstitialAdProps {
 
 export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
   const colors = useColors();
+  const { t } = useI18n();
   const [countdown, setCountdown] = useState(3);
   const [canClose, setCanClose] = useState(false);
 
@@ -57,7 +59,7 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
               </Pressable>
             ) : (
               <View style={[styles.countdownBadge, { backgroundColor: colors.foreground + "22" }]}>
-                <Text style={[styles.countdownText, { color: colors.muted }]}>{countdown}秒</Text>
+                <Text style={[styles.countdownText, { color: colors.muted }]}>{countdown}s</Text>
               </View>
             )}
           </View>
@@ -73,15 +75,15 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
             <View style={styles.featureList}>
               <View style={styles.featureRow}>
                 <Text style={styles.featureIcon}>✨</Text>
-                <Text style={[styles.featureText, { color: colors.foreground }]}>広告なしで快適に日記を書ける</Text>
+                <Text style={[styles.featureText, { color: colors.foreground }]}>{t("ad.feature1")}</Text>
               </View>
               <View style={styles.featureRow}>
                 <Text style={styles.featureIcon}>🎨</Text>
-                <Text style={[styles.featureText, { color: colors.foreground }]}>限定デコステッカーが使える</Text>
+                <Text style={[styles.featureText, { color: colors.foreground }]}>{t("ad.feature2")}</Text>
               </View>
               <View style={styles.featureRow}>
                 <Text style={styles.featureIcon}>☁️</Text>
-                <Text style={[styles.featureText, { color: colors.foreground }]}>クラウドバックアップ対応</Text>
+                <Text style={[styles.featureText, { color: colors.foreground }]}>{t("ad.feature3")}</Text>
               </View>
             </View>
 
@@ -92,10 +94,10 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
                 pressed && { opacity: 0.8 },
               ]}
             >
-              <Text style={styles.ctaText}>プレミアムにアップグレード</Text>
+              <Text style={styles.ctaText}>{t("ad.upgrade")}</Text>
             </Pressable>
 
-            <Text style={[styles.priceText, { color: colors.muted }]}>¥480 / 月</Text>
+            <Text style={[styles.priceText, { color: colors.muted }]}>{t("ad.price")}</Text>
           </View>
         </View>
       </View>

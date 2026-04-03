@@ -25,9 +25,11 @@ import { MOOD_STAMPS, WEATHER_STAMPS, getMoodStamp, getWeatherStamp } from "@/li
 import { PolaroidPhoto } from "@/components/polaroid-photo";
 import { InterstitialAd } from "@/components/interstitial-ad";
 import { useAds } from "@/lib/ad-context";
+import { useI18n } from "@/lib/i18n";
 
 export default function DiaryEditScreen() {
   const colors = useColors();
+  const { t } = useI18n();
   const router = useRouter();
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getEntryForDate, addEntry, editEntry } = useDiary();
@@ -69,7 +71,7 @@ export default function DiaryEditScreen() {
         });
       }
     } catch {
-      Alert.alert("エラー", "写真の選択に失敗しました。");
+      Alert.alert(t("common.error"), t("diary.photoError" as any));
     }
   }, []);
 
@@ -80,7 +82,7 @@ export default function DiaryEditScreen() {
   const handleSave = useCallback(async () => {
     if (!date) return;
     if (!content.trim()) {
-      Alert.alert("エラー", "内容を入力してください。");
+      Alert.alert(t("common.error"), t("diary.contentRequired" as any));
       return;
     }
 
@@ -105,7 +107,7 @@ export default function DiaryEditScreen() {
       }
       router.back();
     } catch {
-      Alert.alert("エラー", "保存に失敗しました。");
+      Alert.alert(t("common.error"), t("diary.saveFailed" as any));
     } finally {
       setSaving(false);
     }
@@ -124,7 +126,7 @@ export default function DiaryEditScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Pressable onPress={() => router.back()} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-              <Text style={[styles.backText, { color: colors.primary }]}>← キャンセル</Text>
+              <Text style={[styles.backText, { color: colors.primary }]}>← {t("common.cancel")}</Text>
             </Pressable>
             <Pressable
               onPress={handleSave}
@@ -136,7 +138,7 @@ export default function DiaryEditScreen() {
                 saving && { opacity: 0.5 },
               ]}
             >
-              <Text style={styles.saveButtonText}>{saving ? "保存中..." : "保存"}</Text>
+              <Text style={styles.saveButtonText}>{saving ? t("diary.saving") : t("diary.save")}</Text>
             </Pressable>
           </View>
 
@@ -197,7 +199,7 @@ export default function DiaryEditScreen() {
               </View>
               <TextInput
                 style={styles.titleInput}
-                placeholder="今日のタイトル 例:猫カフェ!"
+                placeholder={t("diary.titlePlaceholder")}
                 placeholderTextColor="#C4A882"
                 value={title}
                 onChangeText={setTitle}
@@ -228,12 +230,12 @@ export default function DiaryEditScreen() {
             {/* Notebook-style content area */}
             <View style={styles.notebookArea}>
               <Text style={styles.notebookTitle}>
-                {date ? `${date} の日記` : "今日の日記スペース"}
+                {date ? `${date}` : t("diary.todayDiary")}
               </Text>
-              <Text style={styles.notebookSubtitle}>（日記の入力スペース）</Text>
+              <Text style={styles.notebookSubtitle}>{t("diary.contentPlaceholder")}</Text>
               <TextInput
                 style={styles.contentInput}
-                placeholder="今日あったことを書こう..."
+                placeholder={t("diary.writeContent" as any)}
                 placeholderTextColor="#C4A882"
                 value={content}
                 onChangeText={setContent}

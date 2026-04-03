@@ -22,6 +22,7 @@ import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { getMoodStamp } from "@/lib/mood-stamps";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { BannerAd } from "@/components/banner-ad";
+import { useI18n } from "@/lib/i18n";
 
 const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6];
 
@@ -31,6 +32,7 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { entries, getEntryForDate, calendarDecos, setCalendarDecos, streak } = useDiary();
+  const { t } = useI18n();
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -104,12 +106,12 @@ export default function CalendarScreen() {
   const handleDecoRemove = useCallback(
     (decoId: string) => {
       Alert.alert(
-        "デコを削除",
-        "このデコを削除しますか？",
+        t("common.confirm"),
+        t("calendar.deleteDeco"),
         [
-          { text: "キャンセル", style: "cancel" },
+          { text: t("calendar.cancel"), style: "cancel" },
           {
-            text: "削除",
+            text: t("calendar.delete"),
             style: "destructive",
             onPress: () => {
               const current = calendarDecosRef.current;
@@ -200,13 +202,13 @@ export default function CalendarScreen() {
       >
         {/* Header with streak */}
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.foreground }]}>カレンダー</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{t("calendar.title")}</Text>
           <View style={styles.headerRight}>
             {streak.currentStreak > 0 && (
               <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
                 <Text style={styles.streakEmoji}>🔥</Text>
                 <Text style={[styles.streakText, { color: colors.warning }]}>
-                  {streak.currentStreak}日連続
+                  {streak.currentStreak}{t("calendar.streakDays")}
                 </Text>
               </View>
             )}
@@ -218,7 +220,7 @@ export default function CalendarScreen() {
                 pressed && { opacity: 0.8 },
               ]}
             >
-              <Text style={styles.addDecoBtnText}>+ デコ</Text>
+              <Text style={styles.addDecoBtnText}>{t("calendar.addDeco")}</Text>
             </Pressable>
           </View>
         </View>
@@ -258,10 +260,10 @@ export default function CalendarScreen() {
           <View style={[styles.motivCard, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
             <Text style={[styles.motivText, { color: colors.primary }]}>
               {streak.currentStreak >= 7
-                ? "素晴らしい！1週間以上続いています！ 🌟"
+                ? `${t("calendar.motiv7")} 🌟`
                 : streak.currentStreak >= 3
-                  ? "いい調子！続けていきましょう！ ✨"
-                  : "今日も日記を書きましょう！ 📝"}
+                  ? `${t("calendar.motiv3")} ✨`
+                  : `${t("calendar.motiv1")} 📝`}
             </Text>
           </View>
         )}
@@ -297,7 +299,7 @@ export default function CalendarScreen() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  {selectedDate} の日記を書く
+                  {t("calendar.writeDiary")}{selectedDate}
                 </Text>
                 <Text style={[styles.chevron, { color: colors.primary }]}>✏️</Text>
               </View>
@@ -322,9 +324,9 @@ export default function CalendarScreen() {
               <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
             </View>
 
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>デコを追加</Text>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>{t("calendar.selectDeco")}</Text>
             <Text style={[styles.modalSubtitle, { color: colors.muted }]}>
-              {calendarDecos.length}/20 配置中
+              {calendarDecos.length}/20 {t("calendar.placed")}
             </Text>
 
             <View style={styles.decoTabRow}>
@@ -340,7 +342,7 @@ export default function CalendarScreen() {
                 ]}
               >
                 <Text style={[styles.decoTabText, { color: decoTab === "item" ? "#FFFFFF" : colors.foreground }]}>
-                  🎨 アイテム
+                  {t("calendar.itemStickers")}
                 </Text>
               </Pressable>
               <Pressable
@@ -355,7 +357,7 @@ export default function CalendarScreen() {
                 ]}
               >
                 <Text style={[styles.decoTabText, { color: decoTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
-                  🐱 ネコ
+                  {t("calendar.catStickers")}
                 </Text>
               </Pressable>
             </View>

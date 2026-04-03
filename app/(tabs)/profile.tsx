@@ -1,5 +1,7 @@
-import { useCallback, useState } from "react";
-import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share } from "react-native";
+import { useCallback, useState, useEffect } from "react";
+import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share, Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import * as DocumentPicker from "expo-document-picker";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
@@ -7,16 +9,19 @@ import { useColors } from "@/hooks/use-colors";
 import { useThemeContext } from "@/lib/theme-provider";
 import {
   exportAllData,
+  importAllData,
   getPasscode,
   setPasscode,
 } from "@/lib/diary-storage";
 import { useAds } from "@/lib/ad-context";
+import { useI18n } from "@/lib/i18n";
 
 export default function ProfileScreen() {
   const colors = useColors();
-  const { entries, streak } = useDiary();
+  const { entries, streak, reload } = useDiary();
   const { isAdFree, purchaseAdFree, restoreAdFree } = useAds();
   const { colorScheme, setColorScheme } = useThemeContext();
+  const { language, setLanguage, t } = useI18n();
   const [passcodeEnabled, setPasscodeEnabled] = useState(false);
   const [showPasscodeSetup, setShowPasscodeSetup] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
@@ -25,9 +30,13 @@ export default function ProfileScreen() {
   const totalEntries = entries.length;
 
   // Check passcode on mount
-  useState(() => {
-    getPasscode().then((code) => setPasscodeEnabled(!!code));
-  });
+  useEffect(() => {
+    let mounted = true;
+    getPasscode().then((code) => {
+      if (mounted) setPasscodeEnabled(!!code);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const handleToggleDarkMode = useCallback(() => {
     setColorScheme(colorScheme === "dark" ? "light" : "dark");
@@ -64,48 +73,116 @@ export default function ProfileScreen() {
     Alert.alert("完了", "パスコードが設定されました。");
   }, [passcodeInput]);
 
-  const handleExport = useCallback(async () => {
+  // === Backup (Export) ===
+  const handleBackup = useCallback(async () => {
     try {
       const data = await exportAllData();
-      await Share.share({
-        message: data,
-        title: "Calendar&Diary バックアップ",
-      });
-    } catch {
-      Alert.alert("エラー", "エクスポートに失敗しました。");
+      if (Platform.OS === "web") {
+        // Web: download as file
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Alert.alert("完了", "バックアップファイルをダウンロードしました。");
+      } else {
+        // Native: save to file and share
+        const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        const fileUri = FileSystem.documentDirectory + fileName;
+        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+        await Share.share({
+          url: fileUri,
+          title: "Dolly's Diary バックアップ",
+          message: Platform.OS === "android" ? data : undefined,
+        });
+      }
+    } catch (e) {
+      Alert.alert("エラー", "バックアップに失敗しました。");
     }
   }, []);
+
+  // === Restore (Import) ===
+  const handleRestore = useCallback(async () => {
+    Alert.alert(
+      "データを復元",
+      "バックアップファイルからデータを復元します。\n現在のデータは上書きされます。\n続行しますか？",
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "復元する",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: "application/json",
+                copyToCacheDirectory: true,
+              });
+
+              if (result.canceled || !result.assets || result.assets.length === 0) {
+                return;
+              }
+
+              const asset = result.assets[0];
+              let jsonStr: string;
+
+              if (Platform.OS === "web") {
+                // Web: read via fetch
+                const response = await fetch(asset.uri);
+                jsonStr = await response.text();
+              } else {
+                // Native: read from file
+                jsonStr = await FileSystem.readAsStringAsync(asset.uri, {
+                  encoding: FileSystem.EncodingType.UTF8,
+                });
+              }
+
+              const success = await importAllData(jsonStr);
+              if (success) {
+                // Reload diary context
+                if (reload) await reload();
+                Alert.alert("完了", "データを復元しました。アプリを再起動すると完全に反映されます。");
+              } else {
+                Alert.alert("エラー", "バックアップファイルの形式が正しくありません。");
+              }
+            } catch (e) {
+              Alert.alert("エラー", "データの復元に失敗しました。");
+            }
+          },
+        },
+      ]
+    );
+  }, [reload]);
 
   return (
     <ScreenContainer className="px-4 pt-2">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        <Text style={[styles.title, { color: colors.foreground }]}>プロフィール</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{t("profile.title")}</Text>
 
         {/* Stats card */}
         <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statNumber, { color: colors.primary }]}>{totalEntries}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>日記数</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>{t("profile.diaryCount")}</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
               <Text style={[styles.statNumber, { color: colors.warning }]}>{streak.currentStreak}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>連続日数</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>{t("profile.streak")}</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
               <Text style={[styles.statNumber, { color: colors.success }]}>{streak.longestStreak}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>最長記録</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>{t("profile.longestStreak")}</Text>
             </View>
           </View>
         </View>
 
-
-
         {/* Settings section */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>設定</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t("profile.settings")}</Text>
 
           {/* Dark mode */}
           <Pressable
@@ -114,9 +191,9 @@ export default function ProfileScreen() {
           >
             <Text style={{ fontSize: 22 }}>🌙</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.foreground }]}>ダークモード</Text>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.darkMode")}</Text>
               <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
-                {colorScheme === "dark" ? "オン" : "オフ"}
+                {colorScheme === "dark" ? t("profile.darkModeOn") : t("profile.darkModeOff")}
               </Text>
             </View>
             <View style={[styles.toggle, { backgroundColor: colorScheme === "dark" ? colors.primary : colors.border }]}>
@@ -133,35 +210,74 @@ export default function ProfileScreen() {
           >
             <Text style={{ fontSize: 22 }}>🔒</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.foreground }]}>パスコードロック</Text>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.passcode")}</Text>
               <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
-                {passcodeEnabled ? "設定済み" : "未設定"}
+                {passcodeEnabled ? t("profile.passcodeSet") : t("profile.passcodeUnset")}
               </Text>
             </View>
             <View style={[styles.toggle, { backgroundColor: passcodeEnabled ? colors.primary : colors.border }]}>
               <View style={[styles.toggleKnob, { left: passcodeEnabled ? 20 : 2 }]} />
             </View>
           </Pressable>
-
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* Export */}
+          {/* Language */}
           <Pressable
-            onPress={handleExport}
+            onPress={() => setLanguage(language === "ja" ? "en" : "ja")}
+            style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={{ fontSize: 22 }}>🌐</Text>
+            <View style={styles.settingInfo}>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.language")}</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                {language === "ja" ? t("profile.languageJa") : t("profile.languageEn")}
+              </Text>
+            </View>
+            <View style={[styles.langBadge, { backgroundColor: colors.primary + "22" }]}>
+              <Text style={[styles.langBadgeText, { color: colors.primary }]}>{language === "ja" ? "日本語" : "EN"}</Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* Backup & Restore section */}
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t("profile.backup")}</Text>
+
+          {/* Backup */}
+          <Pressable
+            onPress={handleBackup}
             style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
           >
             <Text style={{ fontSize: 22 }}>📤</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.foreground }]}>データエクスポート</Text>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.backupBtn")}</Text>
               <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
-                日記データをバックアップ
+                {t("profile.backupDesc")}
               </Text>
             </View>
           </Pressable>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* Ad removal */}
+          {/* Restore */}
+          <Pressable
+            onPress={handleRestore}
+            style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={{ fontSize: 22 }}>📥</Text>
+            <View style={styles.settingInfo}>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.restoreBtn")}</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                {t("profile.restoreDesc")}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* Ad removal section */}
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t("profile.premium")}</Text>
+
           <Pressable
             onPress={() => {
               if (isAdFree) {
@@ -187,9 +303,9 @@ export default function ProfileScreen() {
           >
             <Text style={{ fontSize: 22 }}>✨</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.foreground }]}>広告を非表示</Text>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.removeAds")}</Text>
               <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
-                {isAdFree ? "有効中" : "¥480で広告を削除"}
+                {isAdFree ? t("profile.removeAdsActive") : t("profile.removeAdsPrice")}
               </Text>
             </View>
             {isAdFree ? (
@@ -215,9 +331,9 @@ export default function ProfileScreen() {
               >
                 <Text style={{ fontSize: 22 }}>🔄</Text>
                 <View style={styles.settingInfo}>
-                  <Text style={[styles.settingTitle, { color: colors.foreground }]}>購入を復元</Text>
+                  <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.restorePurchase")}</Text>
                   <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
-                    以前の購入を復元する
+                    {t("profile.restorePurchaseDesc")}
                   </Text>
                 </View>
               </Pressable>
@@ -272,7 +388,7 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 22 }}>📱</Text>
             <View style={styles.settingInfo}>
               <Text style={[styles.settingTitle, { color: colors.foreground }]}>Calendar&Diary</Text>
-              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>v1.0.27 - カレンダー＆日記アプリ</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>{t("profile.appVersion")}</Text>
             </View>
           </View>
         </View>
@@ -291,7 +407,6 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 40 },
   section: { borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 16, padding: 16 },
   sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 12 },
-
   settingRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
   settingInfo: { flex: 1 },
   settingTitle: { fontSize: 16, fontWeight: "600" },
@@ -305,4 +420,6 @@ const styles = StyleSheet.create({
   passcodeBtnText: { fontSize: 15, fontWeight: "600" },
   premiumBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   premiumBadgeText: { fontSize: 13, fontWeight: "700" },
+  langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  langBadgeText: { fontSize: 13, fontWeight: "700" },
 });

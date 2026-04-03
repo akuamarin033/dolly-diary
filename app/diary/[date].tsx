@@ -8,10 +8,12 @@ import { useColors } from "@/hooks/use-colors";
 import { MOOD_LABELS, WEATHER_LABELS } from "@/lib/diary-storage";
 import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
 import { PolaroidPhoto } from "@/components/polaroid-photo";
+import { useI18n } from "@/lib/i18n";
 
 export default function DiaryDetailScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t, language } = useI18n();
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getEntryForDate, removeEntry } = useDiary();
 
@@ -27,10 +29,10 @@ export default function DiaryDetailScreen() {
 
   const handleDelete = useCallback(() => {
     if (!entry) return;
-    Alert.alert("日記を削除", "この日記を削除しますか？この操作は取り消せません。", [
-      { text: "キャンセル", style: "cancel" },
+    Alert.alert(t("diary.deleteTitle"), t("diary.deleteConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "削除",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           await removeEntry(entry.id);
@@ -45,12 +47,12 @@ export default function DiaryDetailScreen() {
       <ScreenContainer edges={["top", "bottom", "left", "right"]} className="px-4 pt-2">
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-            <Text style={[styles.backText, { color: colors.primary }]}>← 戻る</Text>
+            <Text style={[styles.backText, { color: colors.primary }]}>← {t("diary.back")}</Text>
           </Pressable>
         </View>
         <View style={styles.emptyContainer}>
           <Text style={{ fontSize: 48 }}>📝</Text>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>日記が見つかりません</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("diary.noEntry")}</Text>
         </View>
       </ScreenContainer>
     );
@@ -64,14 +66,14 @@ export default function DiaryDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-            <Text style={[styles.backText, { color: colors.primary }]}>← 戻る</Text>
+            <Text style={[styles.backText, { color: colors.primary }]}>← {t("diary.back")}</Text>
           </Pressable>
           <View style={styles.headerActions}>
             <Pressable onPress={handleEdit} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-              <Text style={[styles.actionText, { color: colors.primary }]}>編集</Text>
+              <Text style={[styles.actionText, { color: colors.primary }]}>{t("diary.edit")}</Text>
             </Pressable>
             <Pressable onPress={handleDelete} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-              <Text style={[styles.actionText, { color: colors.error }]}>削除</Text>
+              <Text style={[styles.actionText, { color: colors.error }]}>{t("common.delete")}</Text>
             </Pressable>
           </View>
         </View>
@@ -155,10 +157,10 @@ export default function DiaryDetailScreen() {
         {/* Timestamps */}
         <View style={styles.timestamps}>
           <Text style={[styles.timestampText, { color: colors.muted }]}>
-            作成: {new Date(entry.createdAt).toLocaleString("ja-JP")}
+            {t("diary.created")}: {new Date(entry.createdAt).toLocaleString(language === "en" ? "en-US" : "ja-JP")}
           </Text>
           <Text style={[styles.timestampText, { color: colors.muted }]}>
-            更新: {new Date(entry.updatedAt).toLocaleString("ja-JP")}
+            {t("diary.updated")}: {new Date(entry.updatedAt).toLocaleString(language === "en" ? "en-US" : "ja-JP")}
           </Text>
         </View>
       </ScrollView>

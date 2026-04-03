@@ -7,18 +7,20 @@ import { useColors } from "@/hooks/use-colors";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
+import { useI18n } from "@/lib/i18n";
 
 type MainTab = "item" | "cat";
 
 export default function StickersScreen() {
   const colors = useColors();
   const { calendarDecos, setCalendarDecos } = useDiary();
+  const { t } = useI18n();
   const [mainTab, setMainTab] = useState<MainTab>("item");
 
   const handleAddItemSticker = useCallback(
     (itemId: string) => {
       if (calendarDecos.length >= 20) {
-        Alert.alert("上限に達しました", "デコステッカーは最大20個まで配置できます。\n不要なステッカーを長押しで削除してください。");
+        Alert.alert(t("calendar.decoLimit"), t("calendar.decoLimitMsg"));
         return;
       }
       const newDeco: CalendarDeco = {
@@ -38,7 +40,7 @@ export default function StickersScreen() {
   const handleAddCatSticker = useCallback(
     (catId: string) => {
       if (calendarDecos.length >= 20) {
-        Alert.alert("上限に達しました", "デコステッカーは最大20個まで配置できます。\n不要なステッカーを長押しで削除してください。");
+        Alert.alert(t("calendar.decoLimit"), t("calendar.decoLimitMsg"));
         return;
       }
       const newDeco: CalendarDeco = {
@@ -60,15 +62,15 @@ export default function StickersScreen() {
     <ScreenContainer className="px-4 pt-2">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.foreground }]}>ステッカー</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{t("stickers.title")}</Text>
           <Text style={[styles.countBadge, { color: colors.muted }]}>
             {calendarDecos.length}/20
           </Text>
         </View>
 
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          ステッカーを選んでカレンダーに配置しよう！{"\n"}
-          カレンダー上のステッカーをタップで5段階の拡大縮小、ダブルタップで回転、長押しで削除できます。
+          {t("stickers.tapToPlace")}{"\n"}
+          {t("stickers.scaleHint")}
         </Text>
 
         {/* Main tabs: アイテム / ネコ */}
@@ -85,7 +87,7 @@ export default function StickersScreen() {
             ]}
           >
             <Text style={[styles.mainTabText, { color: mainTab === "item" ? "#FFFFFF" : colors.foreground }]}>
-              🎨 アイテム
+              {t("stickers.itemTab")}
             </Text>
           </Pressable>
           <Pressable
@@ -100,7 +102,7 @@ export default function StickersScreen() {
             ]}
           >
             <Text style={[styles.mainTabText, { color: mainTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
-              🐱 ネコ
+              {t("stickers.catTab")}
             </Text>
           </Pressable>
         </View>

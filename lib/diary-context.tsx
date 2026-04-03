@@ -37,6 +37,8 @@ interface DiaryContextType {
   setCalendarDecos: (decos: CalendarDeco[]) => Promise<void>;
   // Streak
   streak: StreakData;
+  // Reload all data (for restore)
+  reload: () => Promise<void>;
 }
 
 const DiaryContext = createContext<DiaryContextType | null>(null);
@@ -139,6 +141,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         calendarDecos,
         setCalendarDecos: setCalendarDecosHandler,
         streak,
+        reload: refresh,
       }}
     >
       {children}
