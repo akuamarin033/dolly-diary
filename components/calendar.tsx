@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     overflow: "hidden",
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -233,13 +234,13 @@ const styles = StyleSheet.create({
   },
   weekRow: {
     flexDirection: "row",
+    flex: 1,
   },
   dayCell: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
-    minHeight: 38,
+    paddingVertical: 4,
     margin: 1,
   },
   dayCellBorder: {

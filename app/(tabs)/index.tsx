@@ -10,7 +10,6 @@ import {
   LayoutChangeEvent,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { Calendar } from "@/components/calendar";
@@ -19,7 +18,7 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEntriesForMonth, type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
-import { getMoodStamp } from "@/lib/mood-stamps";
+
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { BannerAd } from "@/components/banner-ad";
 import { useI18n } from "@/lib/i18n";
@@ -30,8 +29,7 @@ type DecoTab = "item" | "cat";
 
 export default function CalendarScreen() {
   const colors = useColors();
-  const router = useRouter();
-  const { entries, getEntryForDate, calendarDecos, setCalendarDecos, streak } = useDiary();
+  const { entries, calendarDecos, setCalendarDecos, streak } = useDiary();
   const { t } = useI18n();
 
   const now = new Date();
@@ -41,14 +39,7 @@ export default function CalendarScreen() {
   const [showDecoModal, setShowDecoModal] = useState(false);
   const [decoTab, setDecoTab] = useState<DecoTab>("item");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const scrollRef = useRef<ScrollView>(null);
-
   const entryDates = useMemo(() => getEntriesForMonth(entries, year, month), [entries, year, month]);
-
-  const selectedEntry = useMemo(() => {
-    if (!selectedDate) return null;
-    return getEntryForDate(selectedDate) ?? null;
-  }, [selectedDate, getEntryForDate]);
 
   const handlePrevMonth = useCallback(() => {
     if (month === 0) {
@@ -73,16 +64,6 @@ export default function CalendarScreen() {
   const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date);
   }, []);
-
-  // Tap on selected date card -> go to diary
-  const handleOpenDiary = useCallback(() => {
-    if (!selectedDate) return;
-    if (selectedEntry) {
-      router.push(`/diary/${selectedDate}` as any);
-    } else {
-      router.push(`/diary/edit?date=${selectedDate}` as any);
-    }
-  }, [selectedDate, selectedEntry, router]);
 
   // Use ref to always have latest calendarDecos for handlers called from DraggableDeco
   const calendarDecosRef = useRef(calendarDecos);
@@ -194,12 +175,6 @@ export default function CalendarScreen() {
 
   return (
     <ScreenContainer className="px-4 pt-2">
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        scrollEnabled={true}
-      >
         {/* Header with streak */}
         <View style={styles.titleRow}>
           <Text style={[styles.title, { color: colors.foreground }]}>{t("calendar.title")}</Text>
@@ -255,58 +230,7 @@ export default function CalendarScreen() {
             ))}
         </View>
 
-        {/* Motivation card */}
-        {streak.currentStreak > 0 && (
-          <View style={[styles.motivCard, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
-            <Text style={[styles.motivText, { color: colors.primary }]}>
-              {streak.currentStreak >= 7
-                ? `${t("calendar.motiv7")} 🌟`
-                : streak.currentStreak >= 3
-                  ? `${t("calendar.motiv3")} ✨`
-                  : `${t("calendar.motiv1")} 📝`}
-            </Text>
-          </View>
-        )}
 
-        {/* Selected date info - simplified, tap to open */}
-        {selectedDate && (
-          <Pressable
-            onPress={handleOpenDiary}
-            style={({ pressed }) => [
-              styles.selectedCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            {selectedEntry ? (
-              <View style={styles.entryHeader}>
-                {(() => {
-                  const stamp = getMoodStamp(selectedEntry.mood);
-                  return stamp ? (
-                    <Image source={stamp.source} style={{ width: 36, height: 36 }} resizeMode="contain" />
-                  ) : (
-                    <Text style={{ fontSize: 28 }}>😊</Text>
-                  );
-                })()}
-                <View style={styles.entryInfo}>
-                  <Text style={[styles.entryTitle, { color: colors.foreground }]}>
-                    {selectedEntry.title}
-                  </Text>
-                  <Text style={[styles.entryDate, { color: colors.muted }]}>{selectedDate}</Text>
-                </View>
-                <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
-              </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  {t("calendar.writeDiary")}{selectedDate}
-                </Text>
-                <Text style={[styles.chevron, { color: colors.primary }]}>✏️</Text>
-              </View>
-            )}
-          </Pressable>
-        )}
-      </ScrollView>
 
       {/* Deco add modal */}
       <Modal
@@ -447,6 +371,7 @@ const styles = StyleSheet.create({
   },
   calendarWrapper: {
     position: "relative",
+    flex: 1,
   },
   motivCard: {
     marginTop: 12,

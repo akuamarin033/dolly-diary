@@ -14,10 +14,6 @@ export const ITEM_STICKERS: ItemSticker[] = [
   { id: "heart", source: require("@/assets/images/stickers/sticker-heart.png") },
   { id: "cake", source: require("@/assets/images/stickers/sticker-cake.png") },
   { id: "gift", source: require("@/assets/images/stickers/sticker-gift.png") },
-  { id: "goodnight", source: require("@/assets/images/stickers/sticker-goodnight.png") },
-  { id: "bath", source: require("@/assets/images/stickers/sticker-bath.png") },
-  { id: "bouquet", source: require("@/assets/images/stickers/sticker-bouquet.png") },
-  { id: "rainbow", source: require("@/assets/images/stickers/sticker-rainbow.png") },
   { id: "sleepcloud", source: require("@/assets/images/stickers/sticker-sleepcloud.png") },
   // BB series - cute items
   { id: "bathduck", source: require("@/assets/images/stickers/sticker-bathduck.png") },
