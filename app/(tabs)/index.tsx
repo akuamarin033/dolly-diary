@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Text,
   View,
@@ -6,13 +6,14 @@ import {
   Pressable,
   StyleSheet,
   Modal,
-  FlatList,
   Image,
+  LayoutChangeEvent,
 } from "react-native";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { Calendar } from "@/components/calendar";
+import { DraggableDeco } from "@/components/draggable-deco";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEntriesForMonth, MOOD_EMOJI, type CalendarDeco } from "@/lib/diary-storage";
@@ -39,6 +40,8 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showDecoModal, setShowDecoModal] = useState(false);
   const [decoTab, setDecoTab] = useState<DecoTab>("icon");
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const scrollRef = useRef<ScrollView>(null);
 
   const entryDates = useMemo(() => getEntriesForMonth(entries, year, month), [entries, year, month]);
 
@@ -103,6 +106,18 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
+  // Drag end - update position
+  const handleDecoDragEnd = useCallback(
+    (decoId: string, newX: number, newY: number) => {
+      const updated = calendarDecos.map((d) => {
+        if (d.id !== decoId) return d;
+        return { ...d, x: newX, y: newY };
+      });
+      setCalendarDecos(updated);
+    },
+    [calendarDecos, setCalendarDecos]
+  );
+
   // Add emoji deco
   const handleAddEmojiDeco = useCallback(
     (emoji: string) => {
@@ -138,9 +153,19 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
+  const handleCalendarLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setContainerSize({ width, height });
+  }, []);
+
   return (
     <ScreenContainer className="px-4 pt-2">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEnabled={true}
+      >
         {/* Header with streak */}
         <View style={styles.titleRow}>
           <Text style={[styles.title, { color: colors.foreground }]}>カレンダー</Text>
@@ -168,7 +193,7 @@ export default function CalendarScreen() {
         </View>
 
         {/* Calendar with deco overlay */}
-        <View style={styles.calendarWrapper}>
+        <View style={styles.calendarWrapper} onLayout={handleCalendarLayout}>
           <Calendar
             year={year}
             month={month}
@@ -179,32 +204,19 @@ export default function CalendarScreen() {
             onNextMonth={handleNextMonth}
           />
 
-          {/* Deco stickers overlay */}
-          {calendarDecos.map((deco) => (
-            <Pressable
-              key={deco.id}
-              onPress={() => handleDecoTap(deco.id)}
-              onLongPress={() => handleDecoRemove(deco.id)}
-              style={[
-                styles.decoSticker,
-                {
-                  left: `${deco.x}%` as any,
-                  top: `${deco.y}%` as any,
-                  transform: [{ scale: deco.scale }],
-                },
-              ]}
-            >
-              {deco.catStickerId ? (
-                <Image
-                  source={CAT_STICKERS.find((c) => c.id === deco.catStickerId)?.source}
-                  style={styles.decoCatImage}
-                  resizeMode="contain"
-                />
-              ) : (
-                <Text style={styles.decoEmoji}>{deco.emoji}</Text>
-              )}
-            </Pressable>
-          ))}
+          {/* Draggable deco stickers overlay */}
+          {containerSize.width > 0 &&
+            calendarDecos.map((deco) => (
+              <DraggableDeco
+                key={deco.id}
+                deco={deco}
+                containerWidth={containerSize.width}
+                containerHeight={containerSize.height}
+                onTap={handleDecoTap}
+                onLongPress={handleDecoRemove}
+                onDragEnd={handleDecoDragEnd}
+              />
+            ))}
         </View>
 
         {/* Motivation card */}
@@ -400,17 +412,6 @@ const styles = StyleSheet.create({
   },
   calendarWrapper: {
     position: "relative",
-  },
-  decoSticker: {
-    position: "absolute",
-    zIndex: 10,
-  },
-  decoEmoji: {
-    fontSize: 28,
-  },
-  decoCatImage: {
-    width: 40,
-    height: 40,
   },
   motivCard: {
     marginTop: 12,
