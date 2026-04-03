@@ -39,3 +39,7 @@ export const CAT_STICKERS: CatSticker[] = [
   { id: "cat31", source: require("@/assets/images/cat-stickers/cat31.png") },
   { id: "cat32", source: require("@/assets/images/cat-stickers/cat32.png") },
 ];
+
+export function getCatStickerById(id: string): CatSticker | undefined {
+  return CAT_STICKERS.find((s) => s.id === id);
+}

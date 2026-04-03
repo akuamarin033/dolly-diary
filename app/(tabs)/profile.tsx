@@ -1,18 +1,18 @@
 import { useCallback, useState, useMemo } from "react";
-import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share } from "react-native";
+import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share, Image } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { useThemeContext } from "@/lib/theme-provider";
 import {
-  MOOD_EMOJI,
   MOOD_LABELS,
   type Mood,
   exportAllData,
   getPasscode,
   setPasscode,
 } from "@/lib/diary-storage";
+import { getMoodStamp } from "@/lib/mood-stamps";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
       const data = await exportAllData();
       await Share.share({
         message: data,
-        title: "Dolly's Diary バックアップ",
+        title: "Calendar&Diary バックアップ",
       });
     } catch {
       Alert.alert("エラー", "エクスポートに失敗しました。");
@@ -115,24 +115,31 @@ export default function ProfileScreen() {
         {moodStats.length > 0 && (
           <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>気分の傾向</Text>
-            {moodStats.map(([mood, count]) => (
-              <View key={mood} style={styles.moodRow}>
-                <Text style={{ fontSize: 22 }}>{MOOD_EMOJI[mood]}</Text>
-                <Text style={[styles.moodLabel, { color: colors.foreground }]}>{MOOD_LABELS[mood]}</Text>
-                <View style={[styles.moodBar, { backgroundColor: colors.border }]}>
-                  <View
-                    style={[
-                      styles.moodBarFill,
-                      {
-                        backgroundColor: colors.primary,
-                        width: `${Math.min(100, (count / totalEntries) * 100)}%`,
-                      },
-                    ]}
-                  />
+            {moodStats.map(([mood, count]) => {
+              const stamp = getMoodStamp(mood);
+              return (
+                <View key={mood} style={styles.moodRow}>
+                  {stamp ? (
+                    <Image source={stamp.source} style={{ width: 28, height: 28 }} resizeMode="contain" />
+                  ) : (
+                    <Text style={{ fontSize: 22 }}>😊</Text>
+                  )}
+                  <Text style={[styles.moodLabel, { color: colors.foreground }]}>{MOOD_LABELS[mood]}</Text>
+                  <View style={[styles.moodBar, { backgroundColor: colors.border }]}>
+                    <View
+                      style={[
+                        styles.moodBarFill,
+                        {
+                          backgroundColor: colors.primary,
+                          width: `${Math.min(100, (count / totalEntries) * 100)}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.moodCount, { color: colors.muted }]}>{count}</Text>
                 </View>
-                <Text style={[styles.moodCount, { color: colors.muted }]}>{count}</Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -239,8 +246,8 @@ export default function ProfileScreen() {
           <View style={styles.settingRow}>
             <Text style={{ fontSize: 22 }}>📱</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.foreground }]}>Dolly's Diary</Text>
-              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>v1.0.0 - カレンダー＆日記アプリ</Text>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>Calendar&Diary</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>v1.0.27 - カレンダー＆日記アプリ</Text>
             </View>
           </View>
         </View>
@@ -250,131 +257,29 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 16,
-  },
-  statsCard: {
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  statLabel: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-  },
-  section: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: 16,
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  moodRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  moodLabel: {
-    width: 50,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  moodBar: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  moodBarFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  moodCount: {
-    width: 24,
-    textAlign: "right",
-    fontSize: 13,
-  },
-  settingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 4,
-  },
-  settingInfo: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  settingSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    position: "relative",
-  },
-  toggleKnob: {
-    position: "absolute",
-    top: 2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF",
-  },
-  divider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  passcodeInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 18,
-    textAlign: "center",
-    letterSpacing: 8,
-    marginBottom: 12,
-  },
-  passcodeButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  passcodeBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  passcodeBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  title: { fontSize: 28, fontWeight: "800", marginBottom: 16 },
+  statsCard: { borderRadius: 16, padding: 20, borderWidth: 1, marginBottom: 16 },
+  statsRow: { flexDirection: "row", alignItems: "center" },
+  statItem: { flex: 1, alignItems: "center" },
+  statNumber: { fontSize: 28, fontWeight: "800" },
+  statLabel: { fontSize: 12, marginTop: 4 },
+  statDivider: { width: 1, height: 40 },
+  section: { borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 16, padding: 16 },
+  sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 12 },
+  moodRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  moodLabel: { width: 50, fontSize: 13, fontWeight: "600" },
+  moodBar: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
+  moodBarFill: { height: "100%", borderRadius: 4 },
+  moodCount: { width: 24, textAlign: "right", fontSize: 13 },
+  settingRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
+  settingInfo: { flex: 1 },
+  settingTitle: { fontSize: 16, fontWeight: "600" },
+  settingSubtitle: { fontSize: 13, marginTop: 2 },
+  toggle: { width: 44, height: 24, borderRadius: 12, position: "relative" },
+  toggleKnob: { position: "absolute", top: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: "#FFFFFF" },
+  divider: { height: 1, marginVertical: 12 },
+  passcodeInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 18, textAlign: "center", letterSpacing: 8, marginBottom: 12 },
+  passcodeButtons: { flexDirection: "row", gap: 12 },
+  passcodeBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" },
+  passcodeBtnText: { fontSize: 15, fontWeight: "600" },
 });

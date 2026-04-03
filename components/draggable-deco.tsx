@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Image, Text, StyleSheet, PanResponder, Animated } from "react-native";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { ITEM_STICKERS } from "@/lib/item-stickers";
 
 interface DraggableDecoProps {
   deco: CalendarDeco;
@@ -74,11 +75,9 @@ export function DraggableDeco({
           const now = Date.now();
           const DOUBLE_TAP_DELAY = 300;
           if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
-            // Double tap -> rotate
             onDoubleTap(deco.id);
             lastTapTime.current = 0;
           } else {
-            // Single tap -> scale
             lastTapTime.current = now;
             setTimeout(() => {
               if (lastTapTime.current !== 0 && Date.now() - lastTapTime.current >= DOUBLE_TAP_DELAY) {
@@ -105,10 +104,16 @@ export function DraggableDeco({
     })
   ).current;
 
+  // Determine image source
   const catSource = deco.catStickerId
     ? CAT_STICKERS.find((c) => c.id === deco.catStickerId)?.source
     : undefined;
 
+  const itemSource = deco.itemStickerId
+    ? ITEM_STICKERS.find((s) => s.id === deco.itemStickerId)?.source
+    : undefined;
+
+  const imageSource = catSource ?? itemSource;
   const rotation = deco.rotation ?? 0;
 
   return (
@@ -126,11 +131,11 @@ export function DraggableDeco({
         },
       ]}
     >
-      {catSource ? (
-        <Image source={catSource} style={styles.decoCatImage} resizeMode="contain" />
-      ) : (
+      {imageSource ? (
+        <Image source={imageSource} style={styles.decoImage} resizeMode="contain" />
+      ) : deco.emoji ? (
         <Text style={styles.decoEmoji}>{deco.emoji}</Text>
-      )}
+      ) : null}
     </Animated.View>
   );
 }
@@ -145,7 +150,7 @@ const styles = StyleSheet.create({
   decoEmoji: {
     fontSize: 28,
   },
-  decoCatImage: {
+  decoImage: {
     width: 40,
     height: 40,
   },

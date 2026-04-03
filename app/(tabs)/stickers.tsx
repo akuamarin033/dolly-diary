@@ -1,56 +1,30 @@
 import { useCallback, useState } from "react";
-import { Text, View, FlatList, Pressable, StyleSheet, Alert, Image } from "react-native";
+import { Text, View, FlatList, Pressable, StyleSheet, Alert, Image, ScrollView } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { ITEM_STICKERS, getItemStickerById } from "@/lib/item-stickers";
 
-const STICKER_CATEGORIES = [
-  {
-    name: "表情",
-    emojis: ["😊", "😢", "😡", "😴", "🥰", "😐", "🤩", "😎", "🥺", "😇", "🤗", "😋"],
-  },
-  {
-    name: "動物",
-    emojis: ["🐱", "🐶", "🐰", "🐻", "🦊", "🐼", "🐨", "🦁", "🐯", "🐸", "🐧", "🦋"],
-  },
-  {
-    name: "自然",
-    emojis: ["🌸", "🌺", "🌻", "🌹", "🍀", "🌈", "⭐", "🌙", "☀️", "❄️", "🌊", "🔥"],
-  },
-  {
-    name: "食べ物",
-    emojis: ["🍰", "🍩", "🍪", "🧁", "🍫", "🍓", "🍑", "🍒", "☕", "🧋", "🍵", "🎂"],
-  },
-  {
-    name: "ハート",
-    emojis: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "💖", "💝", "💕", "💗"],
-  },
-  {
-    name: "その他",
-    emojis: ["🎀", "🎵", "🎨", "📝", "✨", "🌟", "💫", "🎁", "🏠", "📷", "🎈", "🪄"],
-  },
-];
-
-type MainTab = "icon" | "cat";
+type MainTab = "item" | "cat";
 
 export default function StickersScreen() {
   const colors = useColors();
   const { calendarDecos, setCalendarDecos } = useDiary();
-  const [mainTab, setMainTab] = useState<MainTab>("icon");
-  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [mainTab, setMainTab] = useState<MainTab>("item");
 
-  const handleAddEmojiSticker = useCallback(
-    (emoji: string) => {
+  const handleAddItemSticker = useCallback(
+    (itemId: string) => {
       if (calendarDecos.length >= 20) {
         Alert.alert("上限に達しました", "デコステッカーは最大20個まで配置できます。\n不要なステッカーを長押しで削除してください。");
         return;
       }
       const newDeco: CalendarDeco = {
         id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        emoji,
+        emoji: "",
+        itemStickerId: itemId,
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
@@ -97,153 +71,126 @@ export default function StickersScreen() {
     );
   }, [calendarDecos, setCalendarDecos]);
 
-  const category = STICKER_CATEGORIES[selectedCategory];
-
   return (
     <ScreenContainer className="px-4 pt-2">
-      <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: colors.foreground }]}>ステッカー</Text>
-        <Text style={[styles.countBadge, { color: colors.muted }]}>
-          {calendarDecos.length}/20
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: colors.foreground }]}>ステッカー</Text>
+          <Text style={[styles.countBadge, { color: colors.muted }]}>
+            {calendarDecos.length}/20
+          </Text>
+        </View>
+
+        <Text style={[styles.subtitle, { color: colors.muted }]}>
+          ステッカーを選んでカレンダーに配置しよう！{"\n"}
+          カレンダー上のステッカーをタップで拡大縮小、ダブルタップで回転、長押しで削除できます。
         </Text>
-      </View>
 
-      <Text style={[styles.subtitle, { color: colors.muted }]}>
-        ステッカーを選んでカレンダーに配置しよう！{"\n"}
-        カレンダー上のステッカーをタップで拡大縮小、長押しで削除できます。
-      </Text>
+        {/* Main tabs: アイテム / ネコ */}
+        <View style={styles.mainTabRow}>
+          <Pressable
+            onPress={() => setMainTab("item")}
+            style={({ pressed }) => [
+              styles.mainTab,
+              {
+                backgroundColor: mainTab === "item" ? colors.primary : colors.surface,
+                borderColor: mainTab === "item" ? colors.primary : colors.border,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <Text style={[styles.mainTabText, { color: mainTab === "item" ? "#FFFFFF" : colors.foreground }]}>
+              🎨 アイテム
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setMainTab("cat")}
+            style={({ pressed }) => [
+              styles.mainTab,
+              {
+                backgroundColor: mainTab === "cat" ? colors.primary : colors.surface,
+                borderColor: mainTab === "cat" ? colors.primary : colors.border,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <Text style={[styles.mainTabText, { color: mainTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
+              🐱 ネコ
+            </Text>
+          </Pressable>
+        </View>
 
-      {/* Main tabs: アイコン / ネコ */}
-      <View style={styles.mainTabRow}>
-        <Pressable
-          onPress={() => setMainTab("icon")}
-          style={({ pressed }) => [
-            styles.mainTab,
-            {
-              backgroundColor: mainTab === "icon" ? colors.primary : colors.surface,
-              borderColor: mainTab === "icon" ? colors.primary : colors.border,
-            },
-            pressed && { opacity: 0.8 },
-          ]}
-        >
-          <Text style={[styles.mainTabText, { color: mainTab === "icon" ? "#FFFFFF" : colors.foreground }]}>
-            🎨 アイコン
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setMainTab("cat")}
-          style={({ pressed }) => [
-            styles.mainTab,
-            {
-              backgroundColor: mainTab === "cat" ? colors.primary : colors.surface,
-              borderColor: mainTab === "cat" ? colors.primary : colors.border,
-            },
-            pressed && { opacity: 0.8 },
-          ]}
-        >
-          <Text style={[styles.mainTabText, { color: mainTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
-            🐱 ネコ
-          </Text>
-        </Pressable>
-      </View>
-
-      {mainTab === "icon" ? (
-        <>
-          {/* Category tabs */}
-          <FlatList
-            horizontal
-            data={STICKER_CATEGORIES}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryList}
-            renderItem={({ item, index }) => (
-              <Pressable
-                onPress={() => setSelectedCategory(index)}
-                style={({ pressed }) => [
-                  styles.categoryTab,
-                  {
-                    backgroundColor: index === selectedCategory ? colors.primary + "20" : colors.surface,
-                    borderColor: index === selectedCategory ? colors.primary : colors.border,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    { color: index === selectedCategory ? colors.primary : colors.foreground },
-                  ]}
-                >
-                  {item.name}
-                </Text>
-              </Pressable>
-            )}
-            keyExtractor={(_, i) => String(i)}
-          />
-
-          {/* Emoji sticker grid */}
+        {mainTab === "item" ? (
           <View style={[styles.stickerGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {category.emojis.map((emoji, i) => (
+            {ITEM_STICKERS.map((item) => (
               <Pressable
-                key={`${selectedCategory}-${i}`}
-                onPress={() => handleAddEmojiSticker(emoji)}
+                key={item.id}
+                onPress={() => handleAddItemSticker(item.id)}
                 style={({ pressed }) => [
                   styles.stickerCell,
                   { backgroundColor: pressed ? colors.border : "transparent" },
                 ]}
               >
-                <Text style={styles.stickerEmoji}>{emoji}</Text>
+                <Image source={item.source} style={styles.stickerImage} resizeMode="contain" />
               </Pressable>
             ))}
           </View>
-        </>
-      ) : (
-        <>
-          {/* Cat sticker grid */}
-          <View style={[styles.catGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        ) : (
+          <View style={[styles.stickerGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {CAT_STICKERS.map((cat) => (
               <Pressable
                 key={cat.id}
                 onPress={() => handleAddCatSticker(cat.id)}
                 style={({ pressed }) => [
-                  styles.catCell,
+                  styles.stickerCell,
                   { backgroundColor: pressed ? colors.border : "transparent" },
                 ]}
               >
-                <Image source={cat.source} style={styles.catImage} resizeMode="contain" />
+                <Image source={cat.source} style={styles.stickerImage} resizeMode="contain" />
               </Pressable>
             ))}
           </View>
-        </>
-      )}
+        )}
 
-      {/* Current decos preview */}
-      {calendarDecos.length > 0 && (
-        <View style={[styles.previewSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.previewHeader}>
-            <Text style={[styles.previewTitle, { color: colors.foreground }]}>配置中のステッカー</Text>
-            <Pressable
-              onPress={handleRemoveAll}
-              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-            >
-              <Text style={[styles.removeAllText, { color: colors.error }]}>すべて削除</Text>
-            </Pressable>
+        {/* Current decos preview */}
+        {calendarDecos.length > 0 && (
+          <View style={[styles.previewSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.previewHeader}>
+              <Text style={[styles.previewTitle, { color: colors.foreground }]}>配置中のステッカー</Text>
+              <Pressable
+                onPress={handleRemoveAll}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+              >
+                <Text style={[styles.removeAllText, { color: colors.error }]}>すべて削除</Text>
+              </Pressable>
+            </View>
+            <View style={styles.previewRow}>
+              {calendarDecos.map((d) => {
+                const catSource = d.catStickerId
+                  ? CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source
+                  : null;
+                const itemSticker = d.itemStickerId
+                  ? getItemStickerById(d.itemStickerId)
+                  : undefined;
+                const itemSource = itemSticker?.source ?? null;
+                if (catSource) {
+                  return (
+                    <Image key={d.id} source={catSource} style={styles.previewImage} resizeMode="contain" />
+                  );
+                }
+                if (itemSource) {
+                  return (
+                    <Image key={d.id} source={itemSource} style={styles.previewImage} resizeMode="contain" />
+                  );
+                }
+                return d.emoji ? (
+                  <Text key={d.id} style={{ fontSize: 24 }}>{d.emoji}</Text>
+                ) : null;
+              })}
+            </View>
           </View>
-          <View style={styles.previewRow}>
-            {calendarDecos.map((d) =>
-              d.catStickerId ? (
-                <Image
-                  key={d.id}
-                  source={CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source}
-                  style={styles.previewCatImage}
-                  resizeMode="contain"
-                />
-              ) : (
-                <Text key={d.id} style={{ fontSize: 24 }}>{d.emoji}</Text>
-              )
-            )}
-          </View>
-        </View>
-      )}
+        )}
+      </ScrollView>
     </ScreenContainer>
   );
 }
@@ -284,25 +231,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  categoryList: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  categoryTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    borderWidth: 1,
-  },
-  categoryText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
   stickerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     borderRadius: 16,
-    padding: 8,
+    padding: 6,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -312,27 +245,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-  },
-  stickerEmoji: {
-    fontSize: 32,
-  },
-  catGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    borderRadius: 16,
-    padding: 6,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  catCell: {
-    width: "25%",
-    aspectRatio: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
     padding: 4,
   },
-  catImage: {
+  stickerImage: {
     width: 56,
     height: 56,
   },
@@ -361,7 +276,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-  previewCatImage: {
+  previewImage: {
     width: 32,
     height: 32,
   },

@@ -20,7 +20,7 @@ import {
   formatDate,
   parseDate,
   getEntriesForMonth,
-  MOOD_EMOJI,
+  MOOD_CAT_IDS,
   MOOD_LABELS,
   type DiaryEntry,
   type Mood,
@@ -109,7 +109,7 @@ describe("MOOD constants", () => {
   it("has all moods defined", () => {
     const moods: Mood[] = ["happy", "sad", "angry", "sleepy", "love", "neutral", "excited"];
     for (const m of moods) {
-      expect(MOOD_EMOJI[m]).toBeDefined();
+      expect(MOOD_CAT_IDS[m]).toBeDefined();
       expect(MOOD_LABELS[m]).toBeDefined();
     }
   });

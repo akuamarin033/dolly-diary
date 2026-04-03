@@ -1,11 +1,14 @@
 import { useCallback, useState, useMemo } from "react";
-import { Text, View, FlatList, Pressable, TextInput, StyleSheet } from "react-native";
+import { Text, View, FlatList, Pressable, TextInput, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
-import { MOOD_EMOJI, type DiaryEntry } from "@/lib/diary-storage";
+import { type DiaryEntry } from "@/lib/diary-storage";
+import { getMoodStamp } from "@/lib/mood-stamps";
+import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { ITEM_STICKERS } from "@/lib/item-stickers";
 
 export default function DiaryListScreen() {
   const colors = useColors();
@@ -37,42 +40,61 @@ export default function DiaryListScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: DiaryEntry }) => (
-      <Pressable
-        onPress={() => handleOpenEntry(item)}
-        style={({ pressed }) => [
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.border },
-          pressed && { opacity: 0.7 },
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <Text style={styles.moodEmoji}>{MOOD_EMOJI[item.mood]}</Text>
-          <View style={styles.cardInfo}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
-              {item.title}
-            </Text>
-            <Text style={[styles.cardDate, { color: colors.muted }]}>{item.date}</Text>
-          </View>
-          {item.photos && item.photos.length > 0 && (
-            <Text style={{ fontSize: 16 }}>📷 {item.photos.length}</Text>
-          )}
-        </View>
-        <Text style={[styles.cardContent, { color: colors.muted }]} numberOfLines={2}>
-          {item.content}
-        </Text>
-        {item.decoStickers && item.decoStickers.length > 0 && (
-          <View style={styles.decoRow}>
-            {item.decoStickers.slice(0, 5).map((d) => (
-              <Text key={d.id} style={{ fontSize: 16 }}>{d.emoji}</Text>
-            ))}
-            {item.decoStickers.length > 5 && (
-              <Text style={[styles.decoMore, { color: colors.muted }]}>+{item.decoStickers.length - 5}</Text>
+    ({ item }: { item: DiaryEntry }) => {
+      const moodStamp = getMoodStamp(item.mood);
+
+      return (
+        <Pressable
+          onPress={() => handleOpenEntry(item)}
+          style={({ pressed }) => [
+            styles.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            {moodStamp ? (
+              <Image source={moodStamp.source} style={styles.moodImage} resizeMode="contain" />
+            ) : (
+              <Text style={styles.moodEmoji}>😊</Text>
+            )}
+            <View style={styles.cardInfo}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
+                {item.title}
+              </Text>
+              <Text style={[styles.cardDate, { color: colors.muted }]}>{item.date}</Text>
+            </View>
+            {item.photos && item.photos.length > 0 && (
+              <Text style={{ fontSize: 16 }}>📷 {item.photos.length}</Text>
             )}
           </View>
-        )}
-      </Pressable>
-    ),
+          <Text style={[styles.cardContent, { color: colors.muted }]} numberOfLines={2}>
+            {item.content}
+          </Text>
+          {item.decoStickers && item.decoStickers.length > 0 && (
+            <View style={styles.decoRow}>
+              {item.decoStickers.slice(0, 5).map((d) => {
+                const catSrc = d.catStickerId
+                  ? CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source
+                  : undefined;
+                const itemSrc = d.itemStickerId
+                  ? ITEM_STICKERS.find((s) => s.id === d.itemStickerId)?.source
+                  : undefined;
+                const imgSrc = catSrc ?? itemSrc;
+                return imgSrc ? (
+                  <Image key={d.id} source={imgSrc} style={styles.decoImg} resizeMode="contain" />
+                ) : d.emoji ? (
+                  <Text key={d.id} style={{ fontSize: 16 }}>{d.emoji}</Text>
+                ) : null;
+              })}
+              {item.decoStickers.length > 5 && (
+                <Text style={[styles.decoMore, { color: colors.muted }]}>+{item.decoStickers.length - 5}</Text>
+              )}
+            </View>
+          )}
+        </Pressable>
+      );
+    },
     [colors, handleOpenEntry]
   );
 
@@ -124,11 +146,7 @@ export default function DiaryListScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 16,
-  },
+  title: { fontSize: 28, fontWeight: "800", marginBottom: 16 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,67 +157,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 8,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    padding: 0,
-  },
-  listContent: {
-    paddingBottom: 100,
-    gap: 12,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  moodEmoji: {
-    fontSize: 32,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  cardDate: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  cardContent: {
-    fontSize: 14,
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  decoRow: {
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 8,
-    alignItems: "center",
-  },
-  decoMore: {
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 80,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-  },
+  searchInput: { flex: 1, fontSize: 15, padding: 0 },
+  listContent: { paddingBottom: 100, gap: 12 },
+  card: { borderRadius: 16, padding: 16, borderWidth: 1 },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  moodEmoji: { fontSize: 32 },
+  moodImage: { width: 40, height: 40 },
+  cardInfo: { flex: 1 },
+  cardTitle: { fontSize: 17, fontWeight: "700" },
+  cardDate: { fontSize: 13, marginTop: 2 },
+  cardContent: { fontSize: 14, marginTop: 8, lineHeight: 20 },
+  decoRow: { flexDirection: "row", gap: 4, marginTop: 8, alignItems: "center" },
+  decoImg: { width: 24, height: 24 },
+  decoMore: { fontSize: 12, marginLeft: 4 },
+  emptyContainer: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: "700", marginTop: 8 },
+  emptySubtitle: { fontSize: 14, textAlign: "center" },
 });

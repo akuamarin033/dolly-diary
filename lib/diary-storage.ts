@@ -1,32 +1,69 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// === Mood Types ===
-export type Mood = "happy" | "sad" | "angry" | "sleepy" | "love" | "neutral" | "excited";
-
-export const MOOD_EMOJI: Record<Mood, string> = {
-  happy: "😊",
-  sad: "😢",
-  angry: "😡",
-  sleepy: "😴",
-  love: "🥰",
-  neutral: "😐",
-  excited: "🤩",
-};
+// === Mood Types (Cat face stickers) ===
+export type Mood = "happy" | "laugh" | "excited" | "love" | "angel" | "cry" | "angry" | "surprised" | "neutral" | "sleepy" | "sad";
 
 export const MOOD_LABELS: Record<Mood, string> = {
   happy: "嬉しい",
-  sad: "悲しい",
+  laugh: "笑い",
+  excited: "ウキウキ",
+  love: "恋",
+  angel: "天使",
+  cry: "泣き",
   angry: "怒り",
-  sleepy: "眠い",
-  love: "幸せ",
+  surprised: "驚き",
   neutral: "普通",
-  excited: "ワクワク",
+  sleepy: "眠い",
+  sad: "悲しい",
+};
+
+// Cat mood sticker IDs map to cat sticker images (cat01-cat11)
+export const MOOD_CAT_IDS: Record<Mood, string> = {
+  happy: "cat01",
+  laugh: "cat02",
+  excited: "cat03",
+  love: "cat04",
+  angel: "cat05",
+  cry: "cat06",
+  angry: "cat07",
+  surprised: "cat08",
+  neutral: "cat09",
+  sleepy: "cat10",
+  sad: "cat11",
+};
+
+// === Weather Types (Cat weather stickers) ===
+export type Weather = "sunny" | "cloudy" | "rainy" | "umbrella" | "windy" | "snowy" | "rainbow" | "night";
+
+export const WEATHER_LABELS: Record<Weather, string> = {
+  sunny: "晴れ",
+  cloudy: "曇り",
+  rainy: "雨",
+  umbrella: "傘",
+  windy: "風",
+  snowy: "雪",
+  rainbow: "虹",
+  night: "夜",
+};
+
+// Cat weather sticker IDs map to cat sticker images
+export const WEATHER_CAT_IDS: Record<Weather, string> = {
+  sunny: "cat12",
+  cloudy: "cat13",
+  rainy: "cat14",
+  umbrella: "cat15",
+  snowy: "cat16",
+  windy: "cat17",
+  rainbow: "cat18",
+  night: "cat19",
 };
 
 // === Deco Sticker Types ===
 export interface PlacedDeco {
   id: string;
   emoji: string;
+  catStickerId?: string;
+  itemStickerId?: string;
   x: number; // percentage 0-100
   y: number; // percentage 0-100
   scale: number; // 0.5 - 2.0
@@ -39,6 +76,7 @@ export interface DiaryEntry {
   title: string;
   content: string;
   mood: Mood;
+  weather?: Weather;
   photos: string[]; // URIs, max 3
   decoStickers: PlacedDeco[]; // max 10
   createdAt: string;
@@ -50,6 +88,7 @@ export interface CalendarDeco {
   id: string;
   emoji: string;
   catStickerId?: string; // cat01-cat32 if using cat sticker image
+  itemStickerId?: string; // item sticker image id
   x: number;
   y: number;
   scale: number;
@@ -257,15 +296,16 @@ export async function setPasscode(code: string | null): Promise<void> {
 export interface AppSettings {
   darkMode: boolean;
   notificationsEnabled: boolean;
+  language: "ja" | "en";
 }
 
 export async function getSettings(): Promise<AppSettings> {
   try {
     const data = await AsyncStorage.getItem(SETTINGS_KEY);
-    if (!data) return { darkMode: false, notificationsEnabled: false };
+    if (!data) return { darkMode: false, notificationsEnabled: false, language: "ja" };
     return JSON.parse(data) as AppSettings;
   } catch {
-    return { darkMode: false, notificationsEnabled: false };
+    return { darkMode: false, notificationsEnabled: false, language: "ja" };
   }
 }
 

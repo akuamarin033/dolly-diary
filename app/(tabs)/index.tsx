@@ -16,18 +16,16 @@ import { Calendar } from "@/components/calendar";
 import { DraggableDeco } from "@/components/draggable-deco";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
-import { getEntriesForMonth, MOOD_EMOJI, type CalendarDeco } from "@/lib/diary-storage";
+import { getEntriesForMonth, type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { getMoodStamp } from "@/lib/mood-stamps";
+import { ITEM_STICKERS } from "@/lib/item-stickers";
 
 const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
 
-const QUICK_EMOJIS = [
-  "🌸", "⭐", "❤️", "🎀", "✨", "🌈", "🍰", "🐱",
-  "🌙", "🔥", "💖", "🦋", "🎵", "📝", "☀️", "🍓",
-  "💫", "🎨", "🧁", "🌺", "😊", "🥰", "🤩", "😎",
-];
 
-type DecoTab = "icon" | "cat";
+
+type DecoTab = "item" | "cat";
 
 export default function CalendarScreen() {
   const colors = useColors();
@@ -39,7 +37,7 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showDecoModal, setShowDecoModal] = useState(false);
-  const [decoTab, setDecoTab] = useState<DecoTab>("icon");
+  const [decoTab, setDecoTab] = useState<DecoTab>("item");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const scrollRef = useRef<ScrollView>(null);
 
@@ -130,13 +128,14 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Add emoji deco
-  const handleAddEmojiDeco = useCallback(
-    (emoji: string) => {
+  // Add item sticker deco
+  const handleAddItemDeco = useCallback(
+    (itemId: string) => {
       if (calendarDecos.length >= 20) return;
       const newDeco: CalendarDeco = {
         id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        emoji,
+        emoji: "",
+        itemStickerId: itemId,
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
@@ -258,7 +257,14 @@ export default function CalendarScreen() {
             {selectedEntry ? (
               <View>
                 <View style={styles.entryHeader}>
-                  <Text style={{ fontSize: 28 }}>{MOOD_EMOJI[selectedEntry.mood]}</Text>
+                  {(() => {
+                    const stamp = getMoodStamp(selectedEntry.mood);
+                    return stamp ? (
+                      <Image source={stamp.source} style={{ width: 36, height: 36 }} resizeMode="contain" />
+                    ) : (
+                      <Text style={{ fontSize: 28 }}>😊</Text>
+                    );
+                  })()}
                   <View style={styles.entryInfo}>
                     <Text style={[styles.entryTitle, { color: colors.foreground }]}>
                       {selectedEntry.title}
@@ -310,21 +316,21 @@ export default function CalendarScreen() {
               {calendarDecos.length}/20 配置中
             </Text>
 
-            {/* Tab switch: アイコン / ネコ */}
+            {/* Tab switch: アイテム / ネコ */}
             <View style={styles.decoTabRow}>
               <Pressable
-                onPress={() => setDecoTab("icon")}
+                onPress={() => setDecoTab("item")}
                 style={({ pressed }) => [
                   styles.decoTabBtn,
                   {
-                    backgroundColor: decoTab === "icon" ? colors.primary : colors.surface,
-                    borderColor: decoTab === "icon" ? colors.primary : colors.border,
+                    backgroundColor: decoTab === "item" ? colors.primary : colors.surface,
+                    borderColor: decoTab === "item" ? colors.primary : colors.border,
                   },
                   pressed && { opacity: 0.8 },
                 ]}
               >
-                <Text style={[styles.decoTabText, { color: decoTab === "icon" ? "#FFFFFF" : colors.foreground }]}>
-                  🎨 アイコン
+                <Text style={[styles.decoTabText, { color: decoTab === "item" ? "#FFFFFF" : colors.foreground }]}>
+                  🎨 アイテム
                 </Text>
               </Pressable>
               <Pressable
@@ -344,21 +350,23 @@ export default function CalendarScreen() {
               </Pressable>
             </View>
 
-            {decoTab === "icon" ? (
-              <View style={styles.modalGrid}>
-                {QUICK_EMOJIS.map((emoji, i) => (
-                  <Pressable
-                    key={i}
-                    onPress={() => handleAddEmojiDeco(emoji)}
-                    style={({ pressed }) => [
-                      styles.modalCell,
-                      { backgroundColor: pressed ? colors.border : colors.surface },
-                    ]}
-                  >
-                    <Text style={styles.modalEmoji}>{emoji}</Text>
-                  </Pressable>
-                ))}
-              </View>
+            {decoTab === "item" ? (
+              <ScrollView style={styles.catScrollArea} showsVerticalScrollIndicator={false}>
+                <View style={styles.modalCatGrid}>
+                  {ITEM_STICKERS.map((item) => (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => handleAddItemDeco(item.id)}
+                      style={({ pressed }) => [
+                        styles.modalCatCell,
+                        { backgroundColor: pressed ? colors.border : colors.surface },
+                      ]}
+                    >
+                      <Image source={item.source} style={styles.modalCatImage} resizeMode="contain" />
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
             ) : (
               <ScrollView style={styles.catScrollArea} showsVerticalScrollIndicator={false}>
                 <View style={styles.modalCatGrid}>
