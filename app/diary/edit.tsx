@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import {
   Text,
   View,
@@ -23,12 +23,23 @@ import {
 } from "@/lib/diary-storage";
 import { MOOD_STAMPS, WEATHER_STAMPS, getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
 import { PolaroidPhoto } from "@/components/polaroid-photo";
+import { InterstitialAd } from "@/components/interstitial-ad";
+import { useAds } from "@/lib/ad-context";
 
 export default function DiaryEditScreen() {
   const colors = useColors();
   const router = useRouter();
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getEntryForDate, addEntry, editEntry } = useDiary();
+  const { shouldShowInterstitial } = useAds();
+  const [showAd, setShowAd] = useState(false);
+
+  // Show interstitial ad sometimes when opening diary
+  useEffect(() => {
+    if (shouldShowInterstitial()) {
+      setShowAd(true);
+    }
+  }, []);
 
   const existingEntry = useMemo(() => {
     if (!date) return null;
@@ -256,6 +267,7 @@ export default function DiaryEditScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <InterstitialAd visible={showAd} onClose={() => setShowAd(false)} />
     </ScreenContainer>
   );
 }

@@ -8,6 +8,7 @@ import {
   Modal,
   Image,
   LayoutChangeEvent,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -20,6 +21,7 @@ import { getEntriesForMonth, type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { getMoodStamp } from "@/lib/mood-stamps";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
+import { BannerAd } from "@/components/banner-ad";
 
 const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6];
 
@@ -80,10 +82,15 @@ export default function CalendarScreen() {
     }
   }, [selectedDate, selectedEntry, router]);
 
+  // Use ref to always have latest calendarDecos for handlers called from DraggableDeco
+  const calendarDecosRef = useRef(calendarDecos);
+  calendarDecosRef.current = calendarDecos;
+
   // Toggle deco scale on tap (5 steps)
   const handleDecoTap = useCallback(
     (decoId: string) => {
-      const updated = calendarDecos.map((d) => {
+      const current = calendarDecosRef.current;
+      const updated = current.map((d) => {
         if (d.id !== decoId) return d;
         const currentIdx = SCALE_STEPS.findIndex((s) => Math.abs(s - d.scale) < 0.05);
         const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % SCALE_STEPS.length : 0;
@@ -91,42 +98,59 @@ export default function CalendarScreen() {
       });
       setCalendarDecos(updated);
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleDecoRemove = useCallback(
     (decoId: string) => {
-      const updated = calendarDecos.filter((d) => d.id !== decoId);
-      setCalendarDecos(updated);
+      Alert.alert(
+        "デコを削除",
+        "このデコを削除しますか？",
+        [
+          { text: "キャンセル", style: "cancel" },
+          {
+            text: "削除",
+            style: "destructive",
+            onPress: () => {
+              const current = calendarDecosRef.current;
+              const updated = current.filter((d) => d.id !== decoId);
+              setCalendarDecos(updated);
+            },
+          },
+        ]
+      );
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleDecoDoubleTap = useCallback(
     (decoId: string) => {
-      const updated = calendarDecos.map((d) => {
+      const current = calendarDecosRef.current;
+      const updated = current.map((d) => {
         if (d.id !== decoId) return d;
         return { ...d, rotation: ((d.rotation ?? 0) + 45) % 360 };
       });
       setCalendarDecos(updated);
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleDecoDragEnd = useCallback(
     (decoId: string, newX: number, newY: number) => {
-      const updated = calendarDecos.map((d) => {
+      const current = calendarDecosRef.current;
+      const updated = current.map((d) => {
         if (d.id !== decoId) return d;
         return { ...d, x: newX, y: newY };
       });
       setCalendarDecos(updated);
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleAddItemDeco = useCallback(
     (itemId: string) => {
-      if (calendarDecos.length >= 20) return;
+      const current = calendarDecosRef.current;
+      if (current.length >= 20) return;
       const newDeco: CalendarDeco = {
         id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         emoji: "",
@@ -136,15 +160,16 @@ export default function CalendarScreen() {
         scale: 1.0,
         rotation: 0,
       };
-      setCalendarDecos([...calendarDecos, newDeco]);
+      setCalendarDecos([...current, newDeco]);
       setShowDecoModal(false);
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleAddCatDeco = useCallback(
     (catId: string) => {
-      if (calendarDecos.length >= 20) return;
+      const current = calendarDecosRef.current;
+      if (current.length >= 20) return;
       const newDeco: CalendarDeco = {
         id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         emoji: "",
@@ -154,10 +179,10 @@ export default function CalendarScreen() {
         scale: 1.0,
         rotation: 0,
       };
-      setCalendarDecos([...calendarDecos, newDeco]);
+      setCalendarDecos([...current, newDeco]);
       setShowDecoModal(false);
     },
-    [calendarDecos, setCalendarDecos]
+    [setCalendarDecos]
   );
 
   const handleCalendarLayout = useCallback((e: LayoutChangeEvent) => {
@@ -197,6 +222,9 @@ export default function CalendarScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Banner ad */}
+        <BannerAd />
 
         {/* Calendar with deco overlay */}
         <View style={styles.calendarWrapper} onLayout={handleCalendarLayout}>

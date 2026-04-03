@@ -6,7 +6,7 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
-import { ITEM_STICKERS, getItemStickerById } from "@/lib/item-stickers";
+import { ITEM_STICKERS } from "@/lib/item-stickers";
 
 type MainTab = "item" | "cat";
 
@@ -55,21 +55,6 @@ export default function StickersScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  const handleRemoveAll = useCallback(() => {
-    if (calendarDecos.length === 0) return;
-    Alert.alert(
-      "デコステッカーを削除",
-      "カレンダー上のすべてのデコステッカーを削除しますか？",
-      [
-        { text: "キャンセル", style: "cancel" },
-        {
-          text: "削除",
-          style: "destructive",
-          onPress: () => setCalendarDecos([]),
-        },
-      ]
-    );
-  }, [calendarDecos, setCalendarDecos]);
 
   return (
     <ScreenContainer className="px-4 pt-2">
@@ -152,44 +137,6 @@ export default function StickersScreen() {
           </View>
         )}
 
-        {/* Current decos preview */}
-        {calendarDecos.length > 0 && (
-          <View style={[styles.previewSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.previewHeader}>
-              <Text style={[styles.previewTitle, { color: colors.foreground }]}>配置中のステッカー</Text>
-              <Pressable
-                onPress={handleRemoveAll}
-                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-              >
-                <Text style={[styles.removeAllText, { color: colors.error }]}>すべて削除</Text>
-              </Pressable>
-            </View>
-            <View style={styles.previewRow}>
-              {calendarDecos.map((d) => {
-                const catSource = d.catStickerId
-                  ? CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source
-                  : null;
-                const itemSticker = d.itemStickerId
-                  ? getItemStickerById(d.itemStickerId)
-                  : undefined;
-                const itemSource = itemSticker?.source ?? null;
-                if (catSource) {
-                  return (
-                    <Image key={d.id} source={catSource} style={styles.previewImage} resizeMode="contain" />
-                  );
-                }
-                if (itemSource) {
-                  return (
-                    <Image key={d.id} source={itemSource} style={styles.previewImage} resizeMode="contain" />
-                  );
-                }
-                return d.emoji ? (
-                  <Text key={d.id} style={{ fontSize: 24 }}>{d.emoji}</Text>
-                ) : null;
-              })}
-            </View>
-          </View>
-        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -251,33 +198,5 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
   },
-  previewSection: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  previewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  previewTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  removeAllText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  previewRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    alignItems: "center",
-  },
-  previewImage: {
-    width: 32,
-    height: 32,
-  },
+
 });

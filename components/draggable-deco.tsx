@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Image, Text, StyleSheet, PanResponder, Animated } from "react-native";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
@@ -31,6 +31,29 @@ export function DraggableDeco({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTapTime = useRef(0);
 
+  // Keep latest callback refs to avoid stale closures in PanResponder
+  const onTapRef = useRef(onTap);
+  const onDoubleTapRef = useRef(onDoubleTap);
+  const onLongPressRef = useRef(onLongPress);
+  const onDragEndRef = useRef(onDragEnd);
+  const decoIdRef = useRef(deco.id);
+  const containerWidthRef = useRef(containerWidth);
+  const containerHeightRef = useRef(containerHeight);
+  const decoXRef = useRef(deco.x);
+  const decoYRef = useRef(deco.y);
+
+  useEffect(() => {
+    onTapRef.current = onTap;
+    onDoubleTapRef.current = onDoubleTap;
+    onLongPressRef.current = onLongPress;
+    onDragEndRef.current = onDragEnd;
+    decoIdRef.current = deco.id;
+    containerWidthRef.current = containerWidth;
+    containerHeightRef.current = containerHeight;
+    decoXRef.current = deco.x;
+    decoYRef.current = deco.y;
+  });
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -47,7 +70,7 @@ export function DraggableDeco({
 
         longPressTimer.current = setTimeout(() => {
           if (!isDragging.current) {
-            onLongPress(deco.id);
+            onLongPressRef.current(decoIdRef.current);
           }
         }, 600);
       },
@@ -75,13 +98,13 @@ export function DraggableDeco({
           const now = Date.now();
           const DOUBLE_TAP_DELAY = 300;
           if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
-            onDoubleTap(deco.id);
+            onDoubleTapRef.current(decoIdRef.current);
             lastTapTime.current = 0;
           } else {
             lastTapTime.current = now;
             setTimeout(() => {
               if (lastTapTime.current !== 0 && Date.now() - lastTapTime.current >= DOUBLE_TAP_DELAY) {
-                onTap(deco.id);
+                onTapRef.current(decoIdRef.current);
                 lastTapTime.current = 0;
               }
             }, DOUBLE_TAP_DELAY + 10);
@@ -91,15 +114,17 @@ export function DraggableDeco({
 
         const newPxX = (pan.x as any)._value;
         const newPxY = (pan.y as any)._value;
+        const cw = containerWidthRef.current;
+        const ch = containerHeightRef.current;
 
-        const newPercentX = containerWidth > 0
-          ? Math.max(0, Math.min(95, (newPxX / containerWidth) * 100))
-          : deco.x;
-        const newPercentY = containerHeight > 0
-          ? Math.max(0, Math.min(95, (newPxY / containerHeight) * 100))
-          : deco.y;
+        const newPercentX = cw > 0
+          ? Math.max(0, Math.min(95, (newPxX / cw) * 100))
+          : decoXRef.current;
+        const newPercentY = ch > 0
+          ? Math.max(0, Math.min(95, (newPxY / ch) * 100))
+          : decoYRef.current;
 
-        onDragEnd(deco.id, newPercentX, newPercentY);
+        onDragEndRef.current(decoIdRef.current, newPercentX, newPercentY);
       },
     })
   ).current;

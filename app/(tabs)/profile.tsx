@@ -1,22 +1,21 @@
-import { useCallback, useState, useMemo } from "react";
-import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share, Image } from "react-native";
+import { useCallback, useState } from "react";
+import { Text, View, Pressable, StyleSheet, TextInput, Alert, ScrollView, Share } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { useThemeContext } from "@/lib/theme-provider";
 import {
-  MOOD_LABELS,
-  type Mood,
   exportAllData,
   getPasscode,
   setPasscode,
 } from "@/lib/diary-storage";
-import { getMoodStamp } from "@/lib/mood-stamps";
+import { useAds } from "@/lib/ad-context";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const { entries, streak } = useDiary();
+  const { isAdFree, purchaseAdFree, restoreAdFree } = useAds();
   const { colorScheme, setColorScheme } = useThemeContext();
   const [passcodeEnabled, setPasscodeEnabled] = useState(false);
   const [showPasscodeSetup, setShowPasscodeSetup] = useState(false);
@@ -24,15 +23,6 @@ export default function ProfileScreen() {
 
   // Stats
   const totalEntries = entries.length;
-  const moodStats = useMemo(() => {
-    const stats: Partial<Record<Mood, number>> = {};
-    for (const e of entries) {
-      stats[e.mood] = (stats[e.mood] ?? 0) + 1;
-    }
-    return Object.entries(stats)
-      .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))
-      .slice(0, 5) as [Mood, number][];
-  }, [entries]);
 
   // Check passcode on mount
   useState(() => {
@@ -111,37 +101,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Mood distribution */}
-        {moodStats.length > 0 && (
-          <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>気分の傾向</Text>
-            {moodStats.map(([mood, count]) => {
-              const stamp = getMoodStamp(mood);
-              return (
-                <View key={mood} style={styles.moodRow}>
-                  {stamp ? (
-                    <Image source={stamp.source} style={{ width: 28, height: 28 }} resizeMode="contain" />
-                  ) : (
-                    <Text style={{ fontSize: 22 }}>😊</Text>
-                  )}
-                  <Text style={[styles.moodLabel, { color: colors.foreground }]}>{MOOD_LABELS[mood]}</Text>
-                  <View style={[styles.moodBar, { backgroundColor: colors.border }]}>
-                    <View
-                      style={[
-                        styles.moodBarFill,
-                        {
-                          backgroundColor: colors.primary,
-                          width: `${Math.min(100, (count / totalEntries) * 100)}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.moodCount, { color: colors.muted }]}>{count}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
+
 
         {/* Settings section */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -198,6 +158,71 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </Pressable>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          {/* Ad removal */}
+          <Pressable
+            onPress={() => {
+              if (isAdFree) {
+                Alert.alert("広告非表示", "すでに広告非表示が有効です。");
+              } else {
+                Alert.alert(
+                  "広告を非表示にする",
+                  "¥480で広告を完全に非表示にします。",
+                  [
+                    { text: "キャンセル", style: "cancel" },
+                    {
+                      text: "購入する",
+                      onPress: async () => {
+                        await purchaseAdFree();
+                        Alert.alert("完了", "広告が非表示になりました。");
+                      },
+                    },
+                  ]
+                );
+              }
+            }}
+            style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={{ fontSize: 22 }}>✨</Text>
+            <View style={styles.settingInfo}>
+              <Text style={[styles.settingTitle, { color: colors.foreground }]}>広告を非表示</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                {isAdFree ? "有効中" : "¥480で広告を削除"}
+              </Text>
+            </View>
+            {isAdFree ? (
+              <View style={[styles.premiumBadge, { backgroundColor: colors.success + "22" }]}>
+                <Text style={[styles.premiumBadgeText, { color: colors.success }]}>有効</Text>
+              </View>
+            ) : (
+              <View style={[styles.premiumBadge, { backgroundColor: colors.primary + "22" }]}>
+                <Text style={[styles.premiumBadgeText, { color: colors.primary }]}>¥480</Text>
+              </View>
+            )}
+          </Pressable>
+
+          {!isAdFree && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <Pressable
+                onPress={async () => {
+                  await restoreAdFree();
+                  Alert.alert("復元", isAdFree ? "購入済みの広告非表示を復元しました。" : "購入履歴が見つかりませんでした。");
+                }}
+                style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={{ fontSize: 22 }}>🔄</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={[styles.settingTitle, { color: colors.foreground }]}>購入を復元</Text>
+                  <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                    以前の購入を復元する
+                  </Text>
+                </View>
+              </Pressable>
+            </>
+          )}
         </View>
 
         {/* Passcode setup modal inline */}
@@ -266,11 +291,7 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 40 },
   section: { borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 16, padding: 16 },
   sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 12 },
-  moodRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  moodLabel: { width: 50, fontSize: 13, fontWeight: "600" },
-  moodBar: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
-  moodBarFill: { height: "100%", borderRadius: 4 },
-  moodCount: { width: 24, textAlign: "right", fontSize: 13 },
+
   settingRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
   settingInfo: { flex: 1 },
   settingTitle: { fontSize: 16, fontWeight: "600" },
@@ -282,4 +303,6 @@ const styles = StyleSheet.create({
   passcodeButtons: { flexDirection: "row", gap: 12 },
   passcodeBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" },
   passcodeBtnText: { fontSize: 15, fontWeight: "600" },
+  premiumBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  premiumBadgeText: { fontSize: 13, fontWeight: "700" },
 });
