@@ -53,6 +53,7 @@ export interface CalendarDeco {
   x: number;
   y: number;
   scale: number;
+  rotation: number; // degrees 0-360
 }
 
 // === Storage Keys ===

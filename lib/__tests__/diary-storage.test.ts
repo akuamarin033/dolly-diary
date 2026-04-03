@@ -135,7 +135,9 @@ describe("Type definitions", () => {
       x: 30,
       y: 40,
       scale: 1.5,
+      rotation: 0,
     };
     expect(deco.emoji).toBe("⭐");
+    expect(deco.rotation).toBe(0);
   });
 });

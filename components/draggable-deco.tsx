@@ -8,6 +8,7 @@ interface DraggableDecoProps {
   containerWidth: number;
   containerHeight: number;
   onTap: (id: string) => void;
+  onDoubleTap: (id: string) => void;
   onLongPress: (id: string) => void;
   onDragEnd: (id: string, newX: number, newY: number) => void;
 }
@@ -17,6 +18,7 @@ export function DraggableDeco({
   containerWidth,
   containerHeight,
   onTap,
+  onDoubleTap,
   onLongPress,
   onDragEnd,
 }: DraggableDecoProps) {
@@ -26,6 +28,7 @@ export function DraggableDeco({
   const pan = useRef(new Animated.ValueXY({ x: startX, y: startY })).current;
   const isDragging = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapTime = useRef(0);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -68,7 +71,22 @@ export function DraggableDeco({
         pan.flattenOffset();
 
         if (!isDragging.current) {
-          onTap(deco.id);
+          const now = Date.now();
+          const DOUBLE_TAP_DELAY = 300;
+          if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+            // Double tap -> rotate
+            onDoubleTap(deco.id);
+            lastTapTime.current = 0;
+          } else {
+            // Single tap -> scale
+            lastTapTime.current = now;
+            setTimeout(() => {
+              if (lastTapTime.current !== 0 && Date.now() - lastTapTime.current >= DOUBLE_TAP_DELAY) {
+                onTap(deco.id);
+                lastTapTime.current = 0;
+              }
+            }, DOUBLE_TAP_DELAY + 10);
+          }
           return;
         }
 
@@ -91,6 +109,8 @@ export function DraggableDeco({
     ? CAT_STICKERS.find((c) => c.id === deco.catStickerId)?.source
     : undefined;
 
+  const rotation = deco.rotation ?? 0;
+
   return (
     <Animated.View
       {...panResponder.panHandlers}
@@ -101,6 +121,7 @@ export function DraggableDeco({
             { translateX: pan.x },
             { translateY: pan.y },
             { scale: deco.scale },
+            { rotate: `${rotation}deg` },
           ],
         },
       ]}

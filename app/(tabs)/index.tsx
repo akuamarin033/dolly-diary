@@ -106,6 +106,18 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
+  // Rotate deco on double tap (45 degrees)
+  const handleDecoDoubleTap = useCallback(
+    (decoId: string) => {
+      const updated = calendarDecos.map((d) => {
+        if (d.id !== decoId) return d;
+        return { ...d, rotation: ((d.rotation ?? 0) + 45) % 360 };
+      });
+      setCalendarDecos(updated);
+    },
+    [calendarDecos, setCalendarDecos]
+  );
+
   // Drag end - update position
   const handleDecoDragEnd = useCallback(
     (decoId: string, newX: number, newY: number) => {
@@ -128,6 +140,7 @@ export default function CalendarScreen() {
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
+        rotation: 0,
       };
       setCalendarDecos([...calendarDecos, newDeco]);
       setShowDecoModal(false);
@@ -146,6 +159,7 @@ export default function CalendarScreen() {
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
+        rotation: 0,
       };
       setCalendarDecos([...calendarDecos, newDeco]);
       setShowDecoModal(false);
@@ -213,6 +227,7 @@ export default function CalendarScreen() {
                 containerWidth={containerSize.width}
                 containerHeight={containerSize.height}
                 onTap={handleDecoTap}
+                onDoubleTap={handleDecoDoubleTap}
                 onLongPress={handleDecoRemove}
                 onDragEnd={handleDecoDragEnd}
               />

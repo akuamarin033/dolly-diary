@@ -54,6 +54,7 @@ export default function StickersScreen() {
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
+        rotation: 0,
       };
       setCalendarDecos([...calendarDecos, newDeco]);
     },
@@ -73,6 +74,7 @@ export default function StickersScreen() {
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
+        rotation: 0,
       };
       setCalendarDecos([...calendarDecos, newDeco]);
     },
