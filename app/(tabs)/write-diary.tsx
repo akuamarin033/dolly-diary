@@ -1,33 +1,31 @@
-import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { useCallback, useRef } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { formatDate } from "@/lib/diary-storage";
-import { useDiary } from "@/lib/diary-context";
 import { useI18n } from "@/lib/i18n";
 
 export default function WriteDiaryScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { getEntryForDate } = useDiary();
   const { t } = useI18n();
-  const [navigating, setNavigating] = useState(false);
 
   const today = formatDate(new Date());
+  // Track whether we already auto-navigated so we don't loop
+  const hasAutoNavigated = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      // Small delay to ensure tab is fully mounted before navigating
-      if (navigating) return;
+      // Only auto-navigate once per mount. When user comes back from
+      // edit screen via cancel/save, we stay on this screen.
+      if (hasAutoNavigated.current) return;
+      hasAutoNavigated.current = true;
       const timer = setTimeout(() => {
-        setNavigating(true);
         router.push(`/diary/edit?date=${today}` as any);
-        // Reset after navigation so it works when coming back
-        setTimeout(() => setNavigating(false), 500);
       }, 100);
       return () => clearTimeout(timer);
-    }, [today, navigating])
+    }, [today])
   );
 
   return (
