@@ -32,28 +32,35 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "カレンダー",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="write-diary"
+        options={{
+          title: "日記",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="book.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="diary-list"
         options={{
-          title: "日記",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="book.fill" color={color} />,
+          title: "一覧",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="list.bullet" color={color} />,
         }}
       />
       <Tabs.Screen
         name="stickers"
         options={{
-          title: "デコ",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="face.smiling" color={color} />,
+          title: "スタンプ",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="face.smiling" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "プロフィール",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.fill" color={color} />,
         }}
       />
     </Tabs>

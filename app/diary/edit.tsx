@@ -22,6 +22,7 @@ import {
   type Weather,
 } from "@/lib/diary-storage";
 import { MOOD_STAMPS, WEATHER_STAMPS, getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
+import { PolaroidPhoto } from "@/components/polaroid-photo";
 
 export default function DiaryEditScreen() {
   const colors = useColors();
@@ -139,40 +140,42 @@ export default function DiaryEditScreen() {
             <Text style={[styles.cornerDecor, styles.bottomLeft]}>🌸</Text>
             <Text style={[styles.cornerDecor, styles.bottomRight]}>⭐</Text>
 
-            {/* Mood cat stamps section */}
-            <Text style={styles.sectionTitle}>気分スタンプ</Text>
-            <View style={styles.stampGrid}>
-              {MOOD_STAMPS.map((stamp) => (
-                <Pressable
-                  key={stamp.id}
-                  onPress={() => setMood(stamp.id)}
-                  style={({ pressed }) => [
-                    styles.stampItem,
-                    mood === stamp.id && styles.stampItemSelected,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Image source={stamp.source} style={styles.stampImage} resizeMode="contain" />
-                </Pressable>
-              ))}
+            {/* Mood cat stamps section - wrapping grid */}
+            <View style={styles.moodSection}>
+              <View style={styles.stampGrid}>
+                {MOOD_STAMPS.map((stamp) => (
+                  <Pressable
+                    key={stamp.id}
+                    onPress={() => setMood(stamp.id)}
+                    style={({ pressed }) => [
+                      styles.stampItem,
+                      mood === stamp.id && styles.stampItemSelected,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Image source={stamp.source} style={styles.stampImage} resizeMode="contain" />
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
-            {/* Weather cat stamps section */}
-            <Text style={styles.sectionTitle}>天気スタンプ</Text>
-            <View style={styles.stampGrid}>
-              {WEATHER_STAMPS.map((stamp) => (
-                <Pressable
-                  key={stamp.id}
-                  onPress={() => setWeather(weather === stamp.id ? undefined : stamp.id)}
-                  style={({ pressed }) => [
-                    styles.weatherStampItem,
-                    weather === stamp.id && styles.weatherStampItemSelected,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Image source={stamp.source} style={styles.weatherStampImage} resizeMode="contain" />
-                </Pressable>
-              ))}
+            {/* Weather cat stamps section - 4 columns x 2 rows */}
+            <View style={styles.weatherSection}>
+              <View style={styles.weatherGrid}>
+                {WEATHER_STAMPS.map((stamp) => (
+                  <Pressable
+                    key={stamp.id}
+                    onPress={() => setWeather(weather === stamp.id ? undefined : stamp.id)}
+                    style={({ pressed }) => [
+                      styles.weatherStampItem,
+                      weather === stamp.id && styles.weatherStampItemSelected,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Image source={stamp.source} style={styles.weatherStampImage} resizeMode="contain" />
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             {/* Title input */}
@@ -191,27 +194,16 @@ export default function DiaryEditScreen() {
               />
             </View>
 
-            {/* Photo slots (3 tape-style) */}
+            {/* Photo slots - Polaroid style */}
             <View style={styles.photoRow}>
               {[0, 1, 2].map((i) => (
-                <Pressable
+                <PolaroidPhoto
                   key={i}
+                  index={i}
+                  photoUri={photos[i]}
                   onPress={() => photos[i] ? handleRemovePhoto(i) : handlePickPhoto(i)}
-                  style={({ pressed }) => [
-                    styles.photoSlot,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  {/* Tape decoration */}
-                  <View style={styles.tape} />
-                  {photos[i] ? (
-                    <Image source={{ uri: photos[i] }} style={styles.photoImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.photoPlaceholder}>
-                      <Text style={styles.cameraIcon}>📷</Text>
-                    </View>
-                  )}
-                </Pressable>
+                  size={100}
+                />
               ))}
             </View>
 
@@ -324,20 +316,16 @@ const styles = StyleSheet.create({
   topRight: { top: 8, right: 10 },
   bottomLeft: { bottom: 8, left: 10 },
   bottomRight: { bottom: 8, right: 10 },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6B4226",
-    marginBottom: 8,
+  moodSection: {
     marginTop: 12,
-    marginLeft: 4,
+    marginBottom: 4,
   },
   stampGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-    marginBottom: 8,
     paddingHorizontal: 2,
+    justifyContent: "center",
   },
   stampItem: {
     width: 52,
@@ -359,10 +347,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
+  weatherSection: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  weatherGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 2,
+  },
   weatherStampItem: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: "22%",
+    aspectRatio: 1,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: "#E8D5C0",
     backgroundColor: "#FFF8F0",
@@ -376,8 +375,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
   weatherStampImage: {
-    width: 44,
-    height: 44,
+    width: "75%",
+    height: "75%",
   },
   titleRow: {
     flexDirection: "row",
@@ -411,42 +410,10 @@ const styles = StyleSheet.create({
   },
   photoRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
     justifyContent: "center",
-    marginBottom: 12,
-  },
-  photoSlot: {
-    width: 100,
-    height: 120,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E8D5C0",
-    backgroundColor: "#FFF5EB",
-    overflow: "hidden",
-    position: "relative",
-  },
-  tape: {
-    position: "absolute",
-    top: -2,
-    left: "20%",
-    width: "60%",
-    height: 14,
-    backgroundColor: "rgba(245, 230, 211, 0.85)",
-    borderRadius: 2,
-    zIndex: 1,
-  },
-  photoImage: {
-    width: "100%",
-    height: "100%",
-  },
-  photoPlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cameraIcon: {
-    fontSize: 28,
-    color: "#C4A882",
+    alignItems: "flex-start",
+    marginBottom: 8,
   },
   heartsRow: {
     flexDirection: "row",

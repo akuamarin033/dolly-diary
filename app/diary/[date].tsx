@@ -7,6 +7,7 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { MOOD_LABELS, WEATHER_LABELS } from "@/lib/diary-storage";
 import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
+import { PolaroidPhoto } from "@/components/polaroid-photo";
 
 export default function DiaryDetailScreen() {
   const colors = useColors();
@@ -106,14 +107,11 @@ export default function DiaryDetailScreen() {
           <Text style={styles.dateText}>{entry.date}</Text>
           <Text style={styles.titleText}>{entry.title}</Text>
 
-          {/* Photos tape-style */}
+          {/* Photos polaroid-style */}
           {entry.photos && entry.photos.length > 0 && (
             <View style={styles.photoRow}>
               {entry.photos.map((uri, i) => (
-                <View key={i} style={styles.photoSlot}>
-                  <View style={styles.tape} />
-                  <Image source={{ uri }} style={styles.photoImage} resizeMode="cover" />
-                </View>
+                <PolaroidPhoto key={i} index={i} photoUri={uri} size={100} />
               ))}
             </View>
           )}

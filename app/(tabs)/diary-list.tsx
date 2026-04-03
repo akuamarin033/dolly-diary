@@ -6,7 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { type DiaryEntry } from "@/lib/diary-storage";
-import { getMoodStamp } from "@/lib/mood-stamps";
+import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 
@@ -42,6 +42,7 @@ export default function DiaryListScreen() {
   const renderItem = useCallback(
     ({ item }: { item: DiaryEntry }) => {
       const moodStamp = getMoodStamp(item.mood);
+      const weatherStamp = item.weather ? getWeatherStamp(item.weather) : undefined;
 
       return (
         <Pressable
@@ -53,11 +54,17 @@ export default function DiaryListScreen() {
           ]}
         >
           <View style={styles.cardHeader}>
-            {moodStamp ? (
-              <Image source={moodStamp.source} style={styles.moodImage} resizeMode="contain" />
-            ) : (
-              <Text style={styles.moodEmoji}>😊</Text>
-            )}
+            {/* Mood + Weather icons */}
+            <View style={styles.stampColumn}>
+              {moodStamp ? (
+                <Image source={moodStamp.source} style={styles.moodImage} resizeMode="contain" />
+              ) : (
+                <Text style={styles.moodEmoji}>😊</Text>
+              )}
+              {weatherStamp && (
+                <Image source={weatherStamp.source} style={styles.weatherImage} resizeMode="contain" />
+              )}
+            </View>
             <View style={styles.cardInfo}>
               <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
                 {item.title}
@@ -161,8 +168,13 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 100, gap: 12 },
   card: { borderRadius: 16, padding: 16, borderWidth: 1 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  stampColumn: {
+    alignItems: "center",
+    gap: 4,
+  },
   moodEmoji: { fontSize: 32 },
-  moodImage: { width: 40, height: 40 },
+  moodImage: { width: 36, height: 36 },
+  weatherImage: { width: 28, height: 28 },
   cardInfo: { flex: 1 },
   cardTitle: { fontSize: 17, fontWeight: "700" },
   cardDate: { fontSize: 13, marginTop: 2 },

@@ -83,7 +83,7 @@ export default function StickersScreen() {
 
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           ステッカーを選んでカレンダーに配置しよう！{"\n"}
-          カレンダー上のステッカーをタップで拡大縮小、ダブルタップで回転、長押しで削除できます。
+          カレンダー上のステッカーをタップで5段階の拡大縮小、ダブルタップで回転、長押しで削除できます。
         </Text>
 
         {/* Main tabs: アイテム / ネコ */}

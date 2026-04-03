@@ -21,6 +21,8 @@ const MAPPING = {
   "star.fill": "star",
   "trash.fill": "delete",
   "pencil": "edit",
+  "list.bullet": "format-list-bulleted",
+  "square.and.pencil": "edit-note",
   "plus": "add",
   "xmark": "close",
   "photo": "photo",

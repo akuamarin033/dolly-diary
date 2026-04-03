@@ -21,9 +21,7 @@ import { CAT_STICKERS } from "@/lib/cat-stickers";
 import { getMoodStamp } from "@/lib/mood-stamps";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 
-const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
-
-
+const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6];
 
 type DecoTab = "item" | "cat";
 
@@ -72,6 +70,7 @@ export default function CalendarScreen() {
     setSelectedDate(date);
   }, []);
 
+  // Tap on selected date card -> go to diary
   const handleOpenDiary = useCallback(() => {
     if (!selectedDate) return;
     if (selectedEntry) {
@@ -81,7 +80,7 @@ export default function CalendarScreen() {
     }
   }, [selectedDate, selectedEntry, router]);
 
-  // Toggle deco scale on tap
+  // Toggle deco scale on tap (5 steps)
   const handleDecoTap = useCallback(
     (decoId: string) => {
       const updated = calendarDecos.map((d) => {
@@ -95,7 +94,6 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Remove a deco
   const handleDecoRemove = useCallback(
     (decoId: string) => {
       const updated = calendarDecos.filter((d) => d.id !== decoId);
@@ -104,7 +102,6 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Rotate deco on double tap (45 degrees)
   const handleDecoDoubleTap = useCallback(
     (decoId: string) => {
       const updated = calendarDecos.map((d) => {
@@ -116,7 +113,6 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Drag end - update position
   const handleDecoDragEnd = useCallback(
     (decoId: string, newX: number, newY: number) => {
       const updated = calendarDecos.map((d) => {
@@ -128,7 +124,6 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Add item sticker deco
   const handleAddItemDeco = useCallback(
     (itemId: string) => {
       if (calendarDecos.length >= 20) return;
@@ -147,7 +142,6 @@ export default function CalendarScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
-  // Add cat deco
   const handleAddCatDeco = useCallback(
     (catId: string) => {
       if (calendarDecos.length >= 20) return;
@@ -191,7 +185,6 @@ export default function CalendarScreen() {
                 </Text>
               </View>
             )}
-            {/* Deco add button */}
             <Pressable
               onPress={() => setShowDecoModal(true)}
               style={({ pressed }) => [
@@ -217,7 +210,6 @@ export default function CalendarScreen() {
             onNextMonth={handleNextMonth}
           />
 
-          {/* Draggable deco stickers overlay */}
           {containerSize.width > 0 &&
             calendarDecos.map((deco) => (
               <DraggableDeco
@@ -246,52 +238,43 @@ export default function CalendarScreen() {
           </View>
         )}
 
-        {/* Selected date info */}
+        {/* Selected date info - simplified, tap to open */}
         {selectedDate && (
-          <View
-            style={[
+          <Pressable
+            onPress={handleOpenDiary}
+            style={({ pressed }) => [
               styles.selectedCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && { opacity: 0.8 },
             ]}
           >
             {selectedEntry ? (
-              <View>
-                <View style={styles.entryHeader}>
-                  {(() => {
-                    const stamp = getMoodStamp(selectedEntry.mood);
-                    return stamp ? (
-                      <Image source={stamp.source} style={{ width: 36, height: 36 }} resizeMode="contain" />
-                    ) : (
-                      <Text style={{ fontSize: 28 }}>😊</Text>
-                    );
-                  })()}
-                  <View style={styles.entryInfo}>
-                    <Text style={[styles.entryTitle, { color: colors.foreground }]}>
-                      {selectedEntry.title}
-                    </Text>
-                    <Text style={[styles.entryDate, { color: colors.muted }]}>{selectedDate}</Text>
-                  </View>
-                </View>
-                <Text style={[styles.entryPreview, { color: colors.muted }]} numberOfLines={2}>
-                  {selectedEntry.content}
-                </Text>
-                <View style={styles.buttonRow}>
-                  <Text style={[styles.linkText, { color: colors.primary }]} onPress={handleOpenDiary}>
-                    詳細を見る →
+              <View style={styles.entryHeader}>
+                {(() => {
+                  const stamp = getMoodStamp(selectedEntry.mood);
+                  return stamp ? (
+                    <Image source={stamp.source} style={{ width: 36, height: 36 }} resizeMode="contain" />
+                  ) : (
+                    <Text style={{ fontSize: 28 }}>😊</Text>
+                  );
+                })()}
+                <View style={styles.entryInfo}>
+                  <Text style={[styles.entryTitle, { color: colors.foreground }]}>
+                    {selectedEntry.title}
                   </Text>
+                  <Text style={[styles.entryDate, { color: colors.muted }]}>{selectedDate}</Text>
                 </View>
+                <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
               </View>
             ) : (
               <View style={styles.emptyState}>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  この日の日記はまだありません
+                  {selectedDate} の日記を書く
                 </Text>
-                <Text style={[styles.linkText, { color: colors.primary }]} onPress={handleOpenDiary}>
-                  日記を書く ✏️
-                </Text>
+                <Text style={[styles.chevron, { color: colors.primary }]}>✏️</Text>
               </View>
             )}
-          </View>
+          </Pressable>
         )}
       </ScrollView>
 
@@ -316,7 +299,6 @@ export default function CalendarScreen() {
               {calendarDecos.length}/20 配置中
             </Text>
 
-            {/* Tab switch: アイテム / ネコ */}
             <View style={styles.decoTabRow}>
               <Pressable
                 onPress={() => setDecoTab("item")}
@@ -469,23 +451,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  entryPreview: {
-    fontSize: 14,
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  buttonRow: {
-    marginTop: 12,
-    alignItems: "flex-end",
-  },
-  linkText: {
-    fontSize: 15,
-    fontWeight: "600",
+  chevron: {
+    fontSize: 24,
+    fontWeight: "300",
   },
   emptyState: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
+    justifyContent: "space-between",
+    paddingVertical: 4,
   },
   emptyText: {
     fontSize: 14,
@@ -537,22 +511,6 @@ const styles = StyleSheet.create({
   decoTabText: {
     fontSize: 14,
     fontWeight: "700",
-  },
-  modalGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-  },
-  modalCell: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalEmoji: {
-    fontSize: 28,
   },
   catScrollArea: {
     maxHeight: 300,

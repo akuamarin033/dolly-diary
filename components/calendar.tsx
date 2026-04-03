@@ -5,6 +5,22 @@ import { formatDate } from "@/lib/diary-storage";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
+// Month-specific background colors (soft pastel tones)
+const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
+  0: { bg: "#F0F4FF", headerBg: "#D6E4FF" },  // January - 冬の青
+  1: { bg: "#FFF0F5", headerBg: "#FFD6E7" },  // February - バレンタインピンク
+  2: { bg: "#F0FFF0", headerBg: "#D4F5D4" },  // March - 春の緑
+  3: { bg: "#FFF8F0", headerBg: "#FFE8CC" },  // April - 桜オレンジ
+  4: { bg: "#F0FFF8", headerBg: "#C8F7E1" },  // May - 新緑
+  5: { bg: "#F0F0FF", headerBg: "#D4D4FF" },  // June - 梅雨の紫
+  6: { bg: "#FFFFF0", headerBg: "#FFF5CC" },  // July - 夏の黄色
+  7: { bg: "#FFF5F0", headerBg: "#FFD9CC" },  // August - 夏のオレンジ
+  8: { bg: "#FFF8F5", headerBg: "#FFE6D9" },  // September - 秋のベージュ
+  9: { bg: "#FFF5F0", headerBg: "#FFDACC" },  // October - 紅葉
+  10: { bg: "#F8F0FF", headerBg: "#E8D4FF" }, // November - 秋の紫
+  11: { bg: "#F0F8FF", headerBg: "#CCE8FF" }, // December - 冬の水色
+};
+
 interface CalendarProps {
   year: number;
   month: number; // 0-indexed
@@ -26,6 +42,7 @@ export function Calendar({
 }: CalendarProps) {
   const colors = useColors();
   const today = formatDate(new Date());
+  const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
 
   const monthLabel = `${year}年${month + 1}月`;
 
@@ -56,14 +73,14 @@ export function Calendar({
   }, [calendarDays]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[styles.container, { backgroundColor: monthColor.bg, borderColor: colors.border }]}>
       {/* Month navigation header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: monthColor.headerBg }]}>
         <Pressable
           onPress={onPrevMonth}
           style={({ pressed }) => [
             styles.navButton,
-            { backgroundColor: colors.background },
+            { backgroundColor: "rgba(255,255,255,0.6)" },
             pressed && { opacity: 0.7 },
           ]}
         >
@@ -74,7 +91,7 @@ export function Calendar({
           onPress={onNextMonth}
           style={({ pressed }) => [
             styles.navButton,
-            { backgroundColor: colors.background },
+            { backgroundColor: "rgba(255,255,255,0.6)" },
             pressed && { opacity: 0.7 },
           ]}
         >
@@ -119,10 +136,12 @@ export function Calendar({
                 onPress={() => onSelectDate(dateStr)}
                 style={({ pressed }) => [
                   styles.dayCell,
-                  isSelected && { backgroundColor: colors.primary, borderRadius: 20 },
+                  styles.dayCellBorder,
+                  isSelected && { backgroundColor: colors.primary, borderRadius: 8, borderColor: colors.primary },
                   isToday && !isSelected && {
                     backgroundColor: `${colors.primary}22`,
-                    borderRadius: 20,
+                    borderRadius: 8,
+                    borderColor: colors.primary,
                   },
                   pressed && { opacity: 0.7 },
                 ]}
@@ -167,14 +186,18 @@ export function Calendar({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
+    overflow: "hidden",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 12,
   },
   navButton: {
     width: 36,
@@ -192,7 +215,7 @@ const styles = StyleSheet.create({
   },
   weekdayRow: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   weekdayCell: {
     flex: 1,
@@ -210,8 +233,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    minHeight: 40,
+    paddingVertical: 6,
+    minHeight: 38,
+    margin: 1,
+  },
+  dayCellBorder: {
+    borderWidth: 0.5,
+    borderColor: "rgba(0,0,0,0.08)",
+    borderRadius: 6,
   },
   dayText: {
     fontSize: 15,
