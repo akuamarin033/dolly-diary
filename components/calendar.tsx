@@ -109,7 +109,7 @@ export function Calendar({
               style={[
                 styles.weekdayText,
                 {
-                  color: i === 0 ? "#D32F2F" : i === 6 ? "#1976D2" : "#5D4037",
+                  color: i === 0 ? colors.error : i === 6 ? colors.primary : colors.muted,
                 },
               ]}
             >
@@ -152,10 +152,10 @@ export function Calendar({
                     {
                       color:
                         di === 0
-                          ? "#D32F2F"
+                          ? colors.error
                           : di === 6
-                            ? "#1976D2"
-                            : "#2C1810",
+                            ? colors.primary
+                            : colors.foreground,
                     },
                     isToday && { fontWeight: "800" },
                   ]}
