@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, memo } from "react";
 import { Image, Text, StyleSheet, PanResponder, Animated } from "react-native";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { ALL_CAT_STICKERS } from "@/lib/cat-stickers";
@@ -15,7 +15,7 @@ interface DraggableDecoProps {
   onDragEnd: (id: string, newX: number, newY: number) => void;
 }
 
-export function DraggableDeco({
+function DraggableDecoInner({
   deco,
   containerWidth,
   containerHeight,
@@ -28,9 +28,12 @@ export function DraggableDeco({
   const startY = (deco.y / 100) * containerHeight;
 
   const pan = useRef(new Animated.ValueXY({ x: startX, y: startY })).current;
+  const animatedScale = useRef(new Animated.Value(deco.scale)).current;
+  const animatedRotation = useRef(new Animated.Value(deco.rotation ?? 0)).current;
   const isDragging = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTapTime = useRef(0);
+  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep latest callback refs to avoid stale closures in PanResponder
   const onTapRef = useRef(onTap);
@@ -54,6 +57,24 @@ export function DraggableDeco({
     decoXRef.current = deco.x;
     decoYRef.current = deco.y;
   });
+
+  // Animate scale changes smoothly
+  useEffect(() => {
+    Animated.timing(animatedScale, {
+      toValue: deco.scale,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [deco.scale]);
+
+  // Animate rotation changes smoothly
+  useEffect(() => {
+    Animated.timing(animatedRotation, {
+      toValue: deco.rotation ?? 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [deco.rotation]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -99,15 +120,21 @@ export function DraggableDeco({
           const now = Date.now();
           const DOUBLE_TAP_DELAY = 300;
           if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+            // Double tap detected - cancel pending single tap
+            if (singleTapTimer.current) {
+              clearTimeout(singleTapTimer.current);
+              singleTapTimer.current = null;
+            }
             onDoubleTapRef.current(decoIdRef.current);
             lastTapTime.current = 0;
           } else {
             lastTapTime.current = now;
-            setTimeout(() => {
+            singleTapTimer.current = setTimeout(() => {
               if (lastTapTime.current !== 0 && Date.now() - lastTapTime.current >= DOUBLE_TAP_DELAY) {
                 onTapRef.current(decoIdRef.current);
                 lastTapTime.current = 0;
               }
+              singleTapTimer.current = null;
             }, DOUBLE_TAP_DELAY + 10);
           }
           return;
@@ -144,7 +171,11 @@ export function DraggableDeco({
     : undefined;
 
   const imageSource = catSource ?? cat2Source ?? itemSource;
-  const rotation = deco.rotation ?? 0;
+
+  const rotationInterpolation = animatedRotation.interpolate({
+    inputRange: [0, 360],
+    outputRange: ["0deg", "360deg"],
+  });
 
   return (
     <Animated.View
@@ -155,8 +186,8 @@ export function DraggableDeco({
           transform: [
             { translateX: pan.x },
             { translateY: pan.y },
-            { scale: deco.scale },
-            { rotate: `${rotation}deg` },
+            { scale: animatedScale },
+            { rotate: rotationInterpolation },
           ],
         },
       ]}
@@ -169,6 +200,22 @@ export function DraggableDeco({
     </Animated.View>
   );
 }
+
+export const DraggableDeco = memo(DraggableDecoInner, (prev, next) => {
+  return (
+    prev.deco.id === next.deco.id &&
+    prev.deco.x === next.deco.x &&
+    prev.deco.y === next.deco.y &&
+    prev.deco.scale === next.deco.scale &&
+    prev.deco.rotation === next.deco.rotation &&
+    prev.deco.catStickerId === next.deco.catStickerId &&
+    prev.deco.cat2StickerId === next.deco.cat2StickerId &&
+    prev.deco.itemStickerId === next.deco.itemStickerId &&
+    prev.deco.emoji === next.deco.emoji &&
+    prev.containerWidth === next.containerWidth &&
+    prev.containerHeight === next.containerHeight
+  );
+});
 
 const styles = StyleSheet.create({
   decoSticker: {

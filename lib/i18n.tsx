@@ -35,6 +35,7 @@ const translations = {
   "calendar.selectDeco": { ja: "デコを選択", en: "Select Deco" },
   "calendar.itemStickers": { ja: "アイテム", en: "Items" },
   "calendar.catStickers": { ja: "ネコ", en: "Cats" },
+  "calendar.cat2Stickers": { ja: "ネコ2", en: "Cats 2" },
 
   // Diary edit screen
   "diary.todaysTitle": { ja: "Today's\nTitle", en: "Today's\nTitle" },
