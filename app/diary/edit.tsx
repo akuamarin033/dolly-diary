@@ -61,6 +61,7 @@ export default function DiaryEditScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsEditing: true,
+        aspect: [1, 1],
       });
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
