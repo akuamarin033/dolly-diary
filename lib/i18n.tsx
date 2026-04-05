@@ -17,6 +17,7 @@ const translations = {
   // Calendar screen
   "calendar.title": { ja: "カレンダー", en: "Calendar" },
   "calendar.addDeco": { ja: "+ デコ", en: "+ Deco" },
+  "calendar.thisMonth": { ja: "今月", en: "Today" },
   "calendar.year": { ja: "年", en: "" },
   "calendar.month": { ja: "月", en: "" },
   "calendar.sun": { ja: "日", en: "Sun" },

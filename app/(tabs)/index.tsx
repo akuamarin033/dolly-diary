@@ -34,7 +34,7 @@ type DecoTab = "item" | "cat";
 export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { entries, getEntryForDate, calendarDecos, setCalendarDecos, streak } = useDiary();
+  const { entries, getEntryForDate, calendarDecos, setCalendarDecos } = useDiary();
   const { t, language } = useI18n();
 
   const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -250,14 +250,18 @@ export default function CalendarScreen() {
             <Text style={[styles.navArrowText, { color: colors.muted }]}>▶</Text>
           </Pressable>
           <View style={{ flex: 1 }} />
-          {streak.currentStreak > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={[styles.streakText, { color: colors.warning }]}>
-                {streak.currentStreak}{t("calendar.streakDays")}
-              </Text>
-            </View>
-          )}
+          <Pressable
+            onPress={handleToday}
+            style={({ pressed }) => [
+              styles.todayBtn,
+              { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44" },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={[styles.todayBtnText, { color: colors.primary }]}>
+              {t("calendar.thisMonth")}
+            </Text>
+          </Pressable>
           <Pressable
             onPress={() => setShowDecoModal(true)}
             style={({ pressed }) => [
@@ -418,19 +422,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
   },
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+  todayBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  streakEmoji: {
-    fontSize: 16,
-  },
-  streakText: {
-    fontSize: 13,
+  todayBtnText: {
+    fontSize: 12,
     fontWeight: "700",
   },
   addDecoBtn: {
