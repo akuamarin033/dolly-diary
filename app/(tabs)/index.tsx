@@ -22,7 +22,6 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { getEntriesForMonth, type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
-import { CAT2_STICKERS } from "@/lib/cat2-stickers";
 
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { BannerAd } from "@/components/banner-ad";
@@ -30,7 +29,7 @@ import { useI18n } from "@/lib/i18n";
 
 const SCALE_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6];
 
-type DecoTab = "item" | "cat" | "cat2";
+type DecoTab = "item" | "cat";
 
 export default function CalendarScreen() {
   const colors = useColors();
@@ -179,25 +178,6 @@ export default function CalendarScreen() {
         id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         emoji: "",
         catStickerId: catId,
-        x: 10 + Math.random() * 70,
-        y: 10 + Math.random() * 70,
-        scale: 1.0,
-        rotation: 0,
-      };
-      setCalendarDecos([...current, newDeco]);
-      setShowDecoModal(false);
-    },
-    [setCalendarDecos]
-  );
-
-  const handleAddCat2Deco = useCallback(
-    (cat2Id: string) => {
-      const current = calendarDecosRef.current;
-      if (current.length >= 20) return;
-      const newDeco: CalendarDeco = {
-        id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        emoji: "",
-        cat2StickerId: cat2Id,
         x: 10 + Math.random() * 70,
         y: 10 + Math.random() * 70,
         scale: 1.0,
@@ -375,21 +355,6 @@ export default function CalendarScreen() {
                   {t("calendar.catStickers")}
                 </Text>
               </Pressable>
-              <Pressable
-                onPress={() => setDecoTab("cat2")}
-                style={({ pressed }) => [
-                  styles.decoTabBtn,
-                  {
-                    backgroundColor: decoTab === "cat2" ? colors.primary : colors.surface,
-                    borderColor: decoTab === "cat2" ? colors.primary : colors.border,
-                  },
-                  pressed && { opacity: 0.8 },
-                ]}
-              >
-                <Text style={[styles.decoTabText, { color: decoTab === "cat2" ? "#FFFFFF" : colors.foreground }]}>
-                  {t("stickers.cat2Tab")}
-                </Text>
-              </Pressable>
             </View>
 
             {decoTab === "item" ? (
@@ -409,7 +374,7 @@ export default function CalendarScreen() {
                   ))}
                 </View>
               </ScrollView>
-            ) : decoTab === "cat" ? (
+            ) : (
               <ScrollView style={styles.catScrollArea} showsVerticalScrollIndicator={false}>
                 <View style={styles.modalCatGrid}>
                   {CAT_STICKERS.map((cat) => (
@@ -422,23 +387,6 @@ export default function CalendarScreen() {
                       ]}
                     >
                       <Image source={cat.source} style={styles.modalCatImage} resizeMode="contain" />
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-            ) : (
-              <ScrollView style={styles.catScrollArea} showsVerticalScrollIndicator={false}>
-                <View style={styles.modalCatGrid}>
-                  {CAT2_STICKERS.map((cat2) => (
-                    <Pressable
-                      key={cat2.id}
-                      onPress={() => handleAddCat2Deco(cat2.id)}
-                      style={({ pressed }) => [
-                        styles.modalCatCell,
-                        { backgroundColor: pressed ? colors.border : colors.surface },
-                      ]}
-                    >
-                      <Image source={cat2.source} style={styles.modalCatImage} resizeMode="contain" />
                     </Pressable>
                   ))}
                 </View>
