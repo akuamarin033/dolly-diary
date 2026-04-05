@@ -10,6 +10,7 @@ import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { DiaryProvider } from "@/lib/diary-context";
 import { AdProvider } from "@/lib/ad-context";
+import { ConsentProvider } from "@/lib/consent-context";
 import { I18nProvider } from "@/lib/i18n";
 import {
   SafeAreaFrameContext,
@@ -89,6 +90,7 @@ export default function RootLayout() {
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
           <I18nProvider>
+          <ConsentProvider>
           <AdProvider>
             <DiaryProvider>
               <Stack screenOptions={{ headerShown: false }}>
@@ -98,6 +100,7 @@ export default function RootLayout() {
               </Stack>
             </DiaryProvider>
           </AdProvider>
+          </ConsentProvider>
           </I18nProvider>
           <StatusBar style="auto" />
         </QueryClientProvider>

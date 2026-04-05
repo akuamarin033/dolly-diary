@@ -162,6 +162,10 @@ const translations = {
   "ad.feature3": { ja: "クラウドバックアップ対応", en: "Cloud backup support" },
   "ad.upgrade": { ja: "プレミアムにアップグレード", en: "Upgrade to Premium" },
   "ad.price": { ja: "¥480 / 月", en: "$4.99 / month" },
+
+  // Privacy / Consent
+  "profile.privacySettings": { ja: "プライバシー設定", en: "Privacy Settings" },
+  "profile.privacySettingsDesc": { ja: "広告のパーソナライズ設定を管理", en: "Manage ad personalization preferences" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

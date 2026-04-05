@@ -91,6 +91,9 @@ const config: ExpoConfig = {
       {
         androidAppId: "ca-app-pub-7262624140219679~2581809809",
         iosAppId: "ca-app-pub-7262624140219679~2581809809",
+        delay_app_measurement_init: true,
+        user_tracking_usage_description:
+          "This identifier will be used to deliver personalized ads to you.",
       },
     ],
     [

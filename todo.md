@@ -85,3 +85,5 @@
 - [x] react-native-google-mobile-adsパッケージの導入
 - [x] カレンダー上部バナー広告を実AdMob広告に置き換え
 - [x] 日記画面の3回に1回の全画面広告を実AdMob広告に置き換え
+- [x] GDPR同意ダイアログの追加（Google UMP SDK）
+- [x] AdMobメディエーション設定の追加

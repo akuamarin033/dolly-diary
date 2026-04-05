@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Modal, Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useConsent } from "@/lib/consent-context";
 import { useI18n } from "@/lib/i18n";
 
 interface InterstitialAdProps {
@@ -11,13 +12,18 @@ interface InterstitialAdProps {
 export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
   const colors = useColors();
   const { t } = useI18n();
+  const { canRequestAds, isConsentReady } = useConsent();
   const [countdown, setCountdown] = useState(3);
   const [canClose, setCanClose] = useState(false);
-  const [nativeAdHandled, setNativeAdHandled] = useState(false);
 
   // Native AdMob interstitial
   useEffect(() => {
     if (!visible || Platform.OS === "web") return;
+    if (!isConsentReady || !canRequestAds) {
+      // If consent not ready or ads not allowed, skip ad
+      onClose();
+      return;
+    }
 
     let unsubLoaded: (() => void) | null = null;
     let unsubClosed: (() => void) | null = null;
@@ -30,28 +36,26 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
       const AdEventTypeEnum = admob.AdEventType;
 
       const interstitial = InterstitialAdClass.createForAdRequest(config.ADMOB_INTERSTITIAL_ID, {
-        requestNonPersonalizedAdsOnly: true,
+        requestNonPersonalizedAdsOnly: !canRequestAds,
       });
 
       unsubLoaded = interstitial.addAdEventListener(AdEventTypeEnum.LOADED, () => {
         interstitial.show();
-        setNativeAdHandled(true);
       });
 
       unsubClosed = interstitial.addAdEventListener(AdEventTypeEnum.CLOSED, () => {
         onClose();
-        setNativeAdHandled(false);
       });
 
       unsubError = interstitial.addAdEventListener(AdEventTypeEnum.ERROR, (error: any) => {
         console.log("Interstitial ad error:", error);
-        setNativeAdHandled(false);
+        onClose();
       });
 
       interstitial.load();
     } catch (e) {
       console.log("AdMob interstitial not available:", e);
-      setNativeAdHandled(false);
+      onClose();
     }
 
     return () => {
@@ -59,7 +63,7 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
       unsubClosed?.();
       unsubError?.();
     };
-  }, [visible]);
+  }, [visible, isConsentReady, canRequestAds]);
 
   // Web fallback countdown
   useEffect(() => {

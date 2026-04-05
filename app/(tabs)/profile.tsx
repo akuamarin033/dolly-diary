@@ -14,12 +14,14 @@ import {
   setPasscode,
 } from "@/lib/diary-storage";
 import { useAds } from "@/lib/ad-context";
+import { useConsent } from "@/lib/consent-context";
 import { useI18n } from "@/lib/i18n";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const { entries, streak, reload } = useDiary();
   const { isAdFree, purchaseAdFree, restoreAdFree } = useAds();
+  const { gdprApplies, showPrivacyOptions } = useConsent();
   const { colorScheme, setColorScheme } = useThemeContext();
   const { language, setLanguage, t } = useI18n();
   const [passcodeEnabled, setPasscodeEnabled] = useState(false);
@@ -334,6 +336,27 @@ export default function ProfileScreen() {
                   <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.restorePurchase")}</Text>
                   <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
                     {t("profile.restorePurchaseDesc")}
+                  </Text>
+                </View>
+              </Pressable>
+            </>
+          )}
+
+          {/* Privacy / Consent Options (GDPR) */}
+          {(gdprApplies || Platform.OS !== "web") && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <Pressable
+                onPress={async () => {
+                  await showPrivacyOptions();
+                }}
+                style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={{ fontSize: 22 }}>🔒</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={[styles.settingTitle, { color: colors.foreground }]}>{t("profile.privacySettings")}</Text>
+                  <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                    {t("profile.privacySettingsDesc")}
                   </Text>
                 </View>
               </Pressable>

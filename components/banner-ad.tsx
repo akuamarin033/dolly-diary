@@ -1,16 +1,19 @@
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { useAds } from "@/lib/ad-context";
+import { useConsent } from "@/lib/consent-context";
 import { useColors } from "@/hooks/use-colors";
 import { useI18n } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 
 // Native AdMob banner component wrapper
 function NativeAdMobBanner() {
+  const { canRequestAds, isConsentReady } = useConsent();
   const [AdComponents, setAdComponents] = useState<{ BannerAd: any; BannerAdSize: any } | null>(null);
   const [adUnitId, setAdUnitId] = useState<string>("");
 
   useEffect(() => {
     if (Platform.OS === "web") return;
+    if (!isConsentReady || !canRequestAds) return;
     try {
       const admob = require("react-native-google-mobile-ads");
       const config = require("@/lib/admob-config");
@@ -19,7 +22,7 @@ function NativeAdMobBanner() {
     } catch (e) {
       console.log("AdMob not available:", e);
     }
-  }, []);
+  }, [isConsentReady, canRequestAds]);
 
   if (!AdComponents || !adUnitId) return null;
 
@@ -29,7 +32,7 @@ function NativeAdMobBanner() {
       unitId={adUnitId}
       size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
       requestOptions={{
-        requestNonPersonalizedAdsOnly: true,
+        requestNonPersonalizedAdsOnly: !canRequestAds,
       }}
       onAdFailedToLoad={(error: any) => {
         console.log("Banner ad failed to load:", error);
