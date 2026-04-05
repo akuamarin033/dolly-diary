@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Text, View, Pressable, StyleSheet } from "react-native";
+import { Text, View, Pressable, StyleSheet, Image, type ImageSourcePropType } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { formatDate } from "@/lib/diary-storage";
 import { useI18n } from "@/lib/i18n";
@@ -23,6 +23,22 @@ export const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
   11: { bg: "#F0F8FF", headerBg: "#CCE8FF" }, // December - 冬の水色
 };
 
+// Month background images (0-indexed: 0=January, 11=December)
+const MONTH_BG_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require("@/assets/images/calendar-bg/month-01.png"),
+  1: require("@/assets/images/calendar-bg/month-02.png"),
+  2: require("@/assets/images/calendar-bg/month-03.png"),
+  3: require("@/assets/images/calendar-bg/month-04.png"),
+  4: require("@/assets/images/calendar-bg/month-05.png"),
+  5: require("@/assets/images/calendar-bg/month-06.png"),
+  6: require("@/assets/images/calendar-bg/month-07.png"),
+  7: require("@/assets/images/calendar-bg/month-08.png"),
+  8: require("@/assets/images/calendar-bg/month-09.png"),
+  9: require("@/assets/images/calendar-bg/month-10.png"),
+  10: require("@/assets/images/calendar-bg/month-11.png"),
+  11: require("@/assets/images/calendar-bg/month-12.png"),
+};
+
 interface CalendarProps {
   year: number;
   month: number; // 0-indexed
@@ -42,6 +58,7 @@ export function Calendar({
   const { language } = useI18n();
   const today = formatDate(new Date());
   const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
+  const bgImage = MONTH_BG_IMAGES[month];
 
   const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
 
@@ -73,6 +90,17 @@ export function Calendar({
 
   return (
     <View style={[styles.container, { backgroundColor: monthColor.bg, borderColor: colors.border }]}>
+      {/* Month background image - centered, semi-transparent */}
+      {bgImage && (
+        <View style={styles.bgImageContainer} pointerEvents="none">
+          <Image
+            source={bgImage}
+            style={styles.bgImage}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+
       {/* Weekday headers */}
       <View style={styles.weekdayRow}>
         {WEEKDAYS.map((day, i) => (
@@ -159,11 +187,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
     flex: 1,
+    position: "relative",
+  },
+  bgImageContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 0,
+    opacity: 0.25,
+  },
+  bgImage: {
+    width: "65%",
+    height: "65%",
   },
   weekdayRow: {
     flexDirection: "row",
     paddingVertical: 8,
     paddingHorizontal: 4,
+    zIndex: 1,
   },
   weekdayCell: {
     flex: 1,
@@ -176,6 +221,7 @@ const styles = StyleSheet.create({
   weekRow: {
     flexDirection: "row",
     flex: 1,
+    zIndex: 1,
   },
   dayCell: {
     flex: 1,
