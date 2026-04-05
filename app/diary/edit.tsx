@@ -22,7 +22,7 @@ import {
   type Weather,
 } from "@/lib/diary-storage";
 import { MOOD_STAMPS, WEATHER_STAMPS, getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
-import { PolaroidPhoto } from "@/components/polaroid-photo";
+import { DraggablePhotoRow } from "@/components/draggable-photo-row";
 import { InterstitialAd } from "@/components/interstitial-ad";
 import { useAds } from "@/lib/ad-context";
 import { useI18n } from "@/lib/i18n";
@@ -208,18 +208,14 @@ export default function DiaryEditScreen() {
               />
             </View>
 
-            {/* Photo slots - Polaroid style */}
-            <View style={styles.photoRow}>
-              {[0, 1, 2].map((i) => (
-                <PolaroidPhoto
-                  key={i}
-                  index={i}
-                  photoUri={photos[i]}
-                  onPress={() => photos[i] ? handleRemovePhoto(i) : handlePickPhoto(i)}
-                  size={100}
-                />
-              ))}
-            </View>
+            {/* Photo slots - Draggable Polaroid style */}
+            <DraggablePhotoRow
+              photos={photos}
+              onReorder={setPhotos}
+              onPickPhoto={(i) => handlePickPhoto(i)}
+              onRemovePhoto={(i) => handleRemovePhoto(i)}
+              size={100}
+            />
 
             {/* Decorative hearts */}
             <View style={styles.heartsRow}>
@@ -423,13 +419,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6B4226",
   },
-  photoRow: {
-    flexDirection: "row",
-    gap: 4,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
+
   heartsRow: {
     flexDirection: "row",
     justifyContent: "center",
