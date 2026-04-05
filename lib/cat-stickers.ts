@@ -5,7 +5,8 @@ export interface CatSticker {
   source: ImageSourcePropType;
 }
 
-export const CAT_STICKERS: CatSticker[] = [
+// All cat sticker images (used for lookup by ID from diary entries and calendar decos)
+export const ALL_CAT_STICKERS: CatSticker[] = [
   { id: "cat01", source: require("@/assets/images/cat-stickers/cat01.png") },
   { id: "cat02", source: require("@/assets/images/cat-stickers/cat02.png") },
   { id: "cat03", source: require("@/assets/images/cat-stickers/cat03.png") },
@@ -40,6 +41,15 @@ export const CAT_STICKERS: CatSticker[] = [
   { id: "cat32", source: require("@/assets/images/cat-stickers/cat32.png") },
 ];
 
+// Deco-only cat stickers (shown in the sticker picker screen, excludes mood/weather cats)
+export const CAT_STICKERS: CatSticker[] = ALL_CAT_STICKERS.filter(
+  (s) => {
+    const num = parseInt(s.id.replace("cat", ""), 10);
+    // cat01-cat24 are mood/weather stickers, cat25+ are deco-only
+    return num >= 25;
+  }
+);
+
 export function getCatStickerById(id: string): CatSticker | undefined {
-  return CAT_STICKERS.find((s) => s.id === id);
+  return ALL_CAT_STICKERS.find((s) => s.id === id);
 }

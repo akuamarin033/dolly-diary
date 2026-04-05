@@ -7,7 +7,7 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { type DiaryEntry } from "@/lib/diary-storage";
 import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
-import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { ALL_CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { useI18n } from "@/lib/i18n";
 
@@ -84,7 +84,7 @@ export default function DiaryListScreen() {
             <View style={styles.decoRow}>
               {item.decoStickers.slice(0, 5).map((d) => {
                 const catSrc = d.catStickerId
-                  ? CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source
+                  ? ALL_CAT_STICKERS.find((c) => c.id === d.catStickerId)?.source
                   : undefined;
                 const itemSrc = d.itemStickerId
                   ? ITEM_STICKERS.find((s) => s.id === d.itemStickerId)?.source
