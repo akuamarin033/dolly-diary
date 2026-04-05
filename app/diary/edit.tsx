@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -54,27 +55,67 @@ export default function DiaryEditScreen() {
   const [weather, setWeather] = useState<Weather | undefined>(existingEntry?.weather ?? undefined);
   const [photos, setPhotos] = useState<string[]>(existingEntry?.photos ?? []);
   const [saving, setSaving] = useState(false);
+  const [pickingPhoto, setPickingPhoto] = useState<number | null>(null);
+
+  // Handle Android MainActivity destruction - recover pending ImagePicker result
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", async (nextAppState) => {
+      if (nextAppState === "active" && pickingPhoto !== null) {
+        try {
+          const pendingResult = await ImagePicker.getPendingResultAsync();
+          if (pendingResult && "canceled" in pendingResult && !pendingResult.canceled && pendingResult.assets?.[0]) {
+            const uri = pendingResult.assets[0].uri;
+            if (uri && typeof uri === "string" && uri.length > 0) {
+              setPhotos((prev) => {
+                const updated = [...prev];
+                updated[pickingPhoto] = uri;
+                return updated;
+              });
+            }
+          }
+        } catch {
+          // Silently handle - no pending result
+        }
+        setPickingPhoto(null);
+      }
+    });
+    return () => subscription.remove();
+  }, [pickingPhoto]);
 
   const handlePickPhoto = useCallback(async (index: number) => {
     try {
+      setPickingPhoto(index);
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         quality: 0.8,
         allowsEditing: true,
         aspect: [1, 1],
       });
-      if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        setPhotos((prev) => {
-          const updated = [...prev];
-          updated[index] = uri;
-          return updated;
-        });
+
+      setPickingPhoto(null);
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset) return;
+
+      const uri = asset.uri;
+      if (!uri || typeof uri !== "string" || uri.length === 0) {
+        console.warn("ImagePicker returned invalid URI:", uri);
+        return;
       }
-    } catch {
+
+      setPhotos((prev) => {
+        const updated = [...prev];
+        updated[index] = uri;
+        return updated;
+      });
+    } catch (error) {
+      setPickingPhoto(null);
+      console.warn("ImagePicker error:", error);
       Alert.alert(t("common.error"), t("diary.photoError" as any));
     }
-  }, []);
+  }, [t]);
 
   const handleRemovePhoto = useCallback((index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -89,13 +130,16 @@ export default function DiaryEditScreen() {
 
     setSaving(true);
     try {
+      // Filter out any invalid photo URIs before saving
+      const validPhotos = photos.filter((p) => p && typeof p === "string" && p.length > 0);
+
       if (existingEntry) {
         await editEntry(existingEntry.id, {
           title: title.trim() || date,
           content: content.trim(),
           mood,
           weather,
-          photos: photos.filter(Boolean),
+          photos: validPhotos,
         });
       } else {
         await addEntry({
@@ -103,7 +147,7 @@ export default function DiaryEditScreen() {
           title: title.trim() || date,
           content: content.trim(),
           mood,
-          photos: photos.filter(Boolean),
+          photos: validPhotos,
         });
       }
       router.back();
@@ -112,10 +156,15 @@ export default function DiaryEditScreen() {
     } finally {
       setSaving(false);
     }
-  }, [date, title, content, mood, weather, photos, existingEntry, addEntry, editEntry, router]);
+  }, [date, title, content, mood, weather, photos, existingEntry, addEntry, editEntry, router, t]);
 
   const selectedMoodStamp = getMoodStamp(mood);
   const selectedWeatherStamp = weather ? getWeatherStamp(weather) : undefined;
+
+  // Filter photos for display to avoid rendering invalid URIs
+  const displayPhotos = useMemo(() => {
+    return photos.map((p) => (p && typeof p === "string" && p.length > 0 ? p : ""));
+  }, [photos]);
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
@@ -210,7 +259,7 @@ export default function DiaryEditScreen() {
 
             {/* Photo slots - Draggable Polaroid style */}
             <DraggablePhotoRow
-              photos={photos}
+              photos={displayPhotos}
               onReorder={setPhotos}
               onPickPhoto={(i) => handlePickPhoto(i)}
               onRemovePhoto={(i) => handleRemovePhoto(i)}
