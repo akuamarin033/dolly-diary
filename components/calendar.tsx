@@ -1,13 +1,14 @@
 import React, { useMemo } from "react";
 import { Text, View, Pressable, StyleSheet, Image, type ImageSourcePropType } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatDate } from "@/lib/diary-storage";
 import { useI18n } from "@/lib/i18n";
 
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Month-specific background colors (soft pastel tones)
+// Month-specific background colors (soft pastel tones) — light mode only
 export const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
   0: { bg: "#F0F4FF", headerBg: "#D6E4FF" },  // January - 冬の青
   1: { bg: "#FFF0F5", headerBg: "#FFD6E7" },  // February - バレンタインピンク
@@ -55,12 +56,36 @@ export function Calendar({
   onSelectDate,
 }: CalendarProps) {
   const colors = useColors();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { language } = useI18n();
   const today = formatDate(new Date());
   const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
   const bgImage = MONTH_BG_IMAGES[month];
 
   const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
+
+  // Dark mode specific colors
+  const calendarBg = isDark ? "#0A0A0A" : monthColor.bg;
+  const gridBorderColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.06)";
+  const containerBorderColor = isDark ? "rgba(255,255,255,0.15)" : colors.border;
+
+  // Text colors for weekday headers
+  const sundayColor = isDark ? "#FF6B6B" : "#D32F2F";
+  const saturdayColor = isDark ? "#64B5F6" : "#1976D2";
+  const weekdayHeaderColor = isDark ? "rgba(255,255,255,0.5)" : "#5D4037";
+
+  // Text colors for day numbers
+  const sundayDayColor = isDark ? "#FF6B6B" : "#D32F2F";
+  const saturdayDayColor = isDark ? "#64B5F6" : "#1976D2";
+  const normalDayColor = isDark ? "#ECECEC" : "#2C1810";
+
+  // Today/selected highlight
+  const todayBg = isDark ? "rgba(255,255,255,0.08)" : `${colors.primary}18`;
+  const selectedBg = isDark ? "rgba(255,255,255,0.15)" : `${colors.primary}30`;
+
+  // Dot color
+  const dotColor = isDark ? "#E8C49A" : colors.primary;
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
@@ -89,10 +114,10 @@ export function Calendar({
   }, [calendarDays]);
 
   return (
-    <View style={[styles.container, { backgroundColor: monthColor.bg, borderColor: colors.border }]}>
+    <View style={[styles.container, { backgroundColor: calendarBg, borderColor: containerBorderColor }]}>
       {/* Month background image - centered, semi-transparent */}
       {bgImage && (
-        <View style={styles.bgImageContainer} pointerEvents="none">
+        <View style={[styles.bgImageContainer, { opacity: isDark ? 0.15 : 0.25 }]} pointerEvents="none">
           <Image
             source={bgImage}
             style={styles.bgImage}
@@ -109,7 +134,7 @@ export function Calendar({
               style={[
                 styles.weekdayText,
                 {
-                  color: i === 0 ? colors.error : i === 6 ? colors.primary : colors.muted,
+                  color: i === 0 ? sundayColor : i === 6 ? saturdayColor : weekdayHeaderColor,
                 },
               ]}
             >
@@ -124,7 +149,7 @@ export function Calendar({
         <View key={wi} style={styles.weekRow}>
           {week.map((day, di) => {
             if (day === null) {
-              return <View key={`empty-${di}`} style={[styles.dayCell, styles.dayCellBorder]} />;
+              return <View key={`empty-${di}`} style={[styles.dayCell, { borderWidth: 0.5, borderColor: gridBorderColor }]} />;
             }
 
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -138,11 +163,11 @@ export function Calendar({
                 onPress={() => onSelectDate(dateStr)}
                 style={({ pressed }) => [
                   styles.dayCell,
-                  styles.dayCellBorder,
+                  { borderWidth: 0.5, borderColor: gridBorderColor },
                   isToday && !isSelected && {
-                    backgroundColor: `${colors.primary}18`,
+                    backgroundColor: todayBg,
                   },
-                  isSelected && { backgroundColor: `${colors.primary}30` },
+                  isSelected && { backgroundColor: selectedBg },
                   pressed && { opacity: 0.7 },
                 ]}
               >
@@ -152,10 +177,10 @@ export function Calendar({
                     {
                       color:
                         di === 0
-                          ? colors.error
+                          ? sundayDayColor
                           : di === 6
-                            ? colors.primary
-                            : colors.foreground,
+                            ? saturdayDayColor
+                            : normalDayColor,
                     },
                     isToday && { fontWeight: "800" },
                   ]}
@@ -167,7 +192,7 @@ export function Calendar({
                     style={[
                       styles.dot,
                       {
-                        backgroundColor: colors.primary,
+                        backgroundColor: dotColor,
                       },
                     ]}
                   />
@@ -198,7 +223,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 0,
-    opacity: 0.25,
   },
   bgImage: {
     width: "65%",
@@ -229,10 +253,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     paddingTop: 4,
     paddingBottom: 2,
-  },
-  dayCellBorder: {
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.06)",
   },
   dayText: {
     fontSize: 16,
