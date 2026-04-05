@@ -84,12 +84,27 @@ export default function DiaryEditScreen() {
 
   const handlePickPhoto = useCallback(async (index: number) => {
     try {
+      // Request media library permissions explicitly (required for Android APK builds)
+      if (Platform.OS !== "web") {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            t("common.error"),
+            Platform.OS === "ios"
+              ? t("diary.photoPermissionIOS" as any)
+              : t("diary.photoPermissionAndroid" as any)
+          );
+          return;
+        }
+      }
+
       setPickingPhoto(index);
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsEditing: false,
+        exif: false,
       });
 
       setPickingPhoto(null);
@@ -110,10 +125,20 @@ export default function DiaryEditScreen() {
         updated[index] = uri;
         return updated;
       });
-    } catch (error) {
+    } catch (error: any) {
       setPickingPhoto(null);
-      console.warn("ImagePicker error:", error);
-      Alert.alert(t("common.error"), t("diary.photoError" as any));
+      console.warn("ImagePicker error:", error?.message || error);
+      // Don't show error alert for known Android issues that are non-fatal
+      // e.g. FailedToDeduceTypeException on Samsung devices
+      const errorMsg = error?.message || String(error);
+      if (errorMsg.includes("FailedToDeduceType") || errorMsg.includes("Cannot deduce")) {
+        Alert.alert(
+          t("common.error"),
+          t("diary.photoTypeError" as any)
+        );
+      } else {
+        Alert.alert(t("common.error"), t("diary.photoError" as any));
+      }
     }
   }, [t]);
 
