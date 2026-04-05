@@ -86,23 +86,11 @@ export default function DiaryEditScreen() {
     try {
       setPickingPhoto(index);
 
-      let result: ImagePicker.ImagePickerResult;
-      try {
-        // Try with editing (cropping) first
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ["images"],
-          quality: 0.8,
-          allowsEditing: true,
-          aspect: [1, 1],
-        });
-      } catch {
-        // Fallback without editing if cropping fails (e.g. on web)
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ["images"],
-          quality: 0.8,
-          allowsEditing: false,
-        });
-      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.8,
+        allowsEditing: false,
+      });
 
       setPickingPhoto(null);
 

@@ -40,6 +40,22 @@ const MONTH_BG_IMAGES: Record<number, ImageSourcePropType> = {
   11: require("@/assets/images/calendar-bg/month-12.png"),
 };
 
+// Dark mode month background images (neon cat illustrations)
+const MONTH_BG_IMAGES_DARK: Record<number, ImageSourcePropType> = {
+  0: require("@/assets/images/calendar-bg-dark/month-01.png"),
+  1: require("@/assets/images/calendar-bg-dark/month-02.png"),
+  2: require("@/assets/images/calendar-bg-dark/month-03.png"),
+  3: require("@/assets/images/calendar-bg-dark/month-04.png"),
+  4: require("@/assets/images/calendar-bg-dark/month-05.png"),
+  5: require("@/assets/images/calendar-bg-dark/month-06.png"),
+  6: require("@/assets/images/calendar-bg-dark/month-07.png"),
+  7: require("@/assets/images/calendar-bg-dark/month-08.png"),
+  8: require("@/assets/images/calendar-bg-dark/month-09.png"),
+  9: require("@/assets/images/calendar-bg-dark/month-10.png"),
+  10: require("@/assets/images/calendar-bg-dark/month-11.png"),
+  11: require("@/assets/images/calendar-bg-dark/month-12.png"),
+};
+
 interface CalendarProps {
   year: number;
   month: number; // 0-indexed
@@ -61,7 +77,7 @@ export function Calendar({
   const { language } = useI18n();
   const today = formatDate(new Date());
   const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
-  const bgImage = MONTH_BG_IMAGES[month];
+  const bgImage = isDark ? MONTH_BG_IMAGES_DARK[month] : MONTH_BG_IMAGES[month];
 
   const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
 
@@ -117,7 +133,7 @@ export function Calendar({
     <View style={[styles.container, { backgroundColor: calendarBg, borderColor: containerBorderColor }]}>
       {/* Month background image - centered, semi-transparent */}
       {bgImage && (
-        <View style={[styles.bgImageContainer, { opacity: isDark ? 0.15 : 0.25 }]} pointerEvents="none">
+        <View style={[styles.bgImageContainer, { opacity: isDark ? 0.45 : 0.25 }]} pointerEvents="none">
           <Image
             source={bgImage}
             style={styles.bgImage}
