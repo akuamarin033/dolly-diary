@@ -10,6 +10,7 @@ import {
   LayoutChangeEvent,
   Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { Calendar } from "@/components/calendar";
@@ -29,7 +30,8 @@ type DecoTab = "item" | "cat";
 
 export default function CalendarScreen() {
   const colors = useColors();
-  const { entries, calendarDecos, setCalendarDecos, streak } = useDiary();
+  const router = useRouter();
+  const { entries, getEntryForDate, calendarDecos, setCalendarDecos, streak } = useDiary();
   const { t } = useI18n();
 
   const now = new Date();
@@ -63,7 +65,13 @@ export default function CalendarScreen() {
 
   const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date);
-  }, []);
+    const entry = getEntryForDate(date);
+    if (entry) {
+      router.push(`/diary/${date}` as any);
+    } else {
+      router.push(`/diary/edit?date=${date}` as any);
+    }
+  }, [getEntryForDate, router]);
 
   // Use ref to always have latest calendarDecos for handlers called from DraggableDeco
   const calendarDecosRef = useRef(calendarDecos);
