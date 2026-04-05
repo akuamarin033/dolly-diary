@@ -1,0 +1,6 @@
+Preview screenshot confirms:
+- Calendar dates are now displayed at the top of each cell (flex-start) instead of center
+- TypeScript: No errors
+- Dev server: running normally
+- Weather icons: replaced (need to verify on diary edit screen)
+- Notebook subtitle removed (need to verify on diary edit screen)

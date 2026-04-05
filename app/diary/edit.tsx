@@ -278,7 +278,6 @@ export default function DiaryEditScreen() {
               <Text style={styles.notebookTitle}>
                 {date ? `${date}` : t("diary.todayDiary")}
               </Text>
-              <Text style={styles.notebookSubtitle}>{t("diary.contentPlaceholder")}</Text>
               <TextInput
                 style={styles.contentInput}
                 placeholder={t("diary.writeContent" as any)}

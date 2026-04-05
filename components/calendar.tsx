@@ -226,8 +226,9 @@ const styles = StyleSheet.create({
   dayCell: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 2,
+    justifyContent: "flex-start",
+    paddingTop: 4,
+    paddingBottom: 2,
   },
   dayCellBorder: {
     borderWidth: 0.5,
