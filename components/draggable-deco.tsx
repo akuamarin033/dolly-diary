@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { Image, Text, StyleSheet, PanResponder, Animated } from "react-native";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { ALL_CAT_STICKERS } from "@/lib/cat-stickers";
+import { CAT2_STICKERS } from "@/lib/cat2-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 
 interface DraggableDecoProps {
@@ -134,11 +135,15 @@ export function DraggableDeco({
     ? ALL_CAT_STICKERS.find((c) => c.id === deco.catStickerId)?.source
     : undefined;
 
+  const cat2Source = deco.cat2StickerId
+    ? CAT2_STICKERS.find((c) => c.id === deco.cat2StickerId)?.source
+    : undefined;
+
   const itemSource = deco.itemStickerId
     ? ITEM_STICKERS.find((s) => s.id === deco.itemStickerId)?.source
     : undefined;
 
-  const imageSource = catSource ?? itemSource;
+  const imageSource = catSource ?? cat2Source ?? itemSource;
   const rotation = deco.rotation ?? 0;
 
   return (

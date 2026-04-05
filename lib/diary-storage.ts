@@ -98,6 +98,7 @@ export interface CalendarDeco {
   id: string;
   emoji: string;
   catStickerId?: string; // cat01-cat32 if using cat sticker image
+  cat2StickerId?: string; // cat2_01-cat2_44 if using cat2 sticker image
   itemStickerId?: string; // item sticker image id
   x: number;
   y: number;

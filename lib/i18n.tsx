@@ -63,6 +63,7 @@ const translations = {
   "stickers.title": { ja: "デコ", en: "Deco" },
   "stickers.itemTab": { ja: "アイテム", en: "Items" },
   "stickers.catTab": { ja: "ネコ", en: "Cats" },
+  "stickers.cat2Tab": { ja: "ネコ2", en: "Cats 2" },
   "stickers.tapToPlace": { ja: "ステッカーを選んでカレンダーに配置しよう！", en: "Pick a sticker to place on the calendar!" },
   "stickers.scaleHint": { ja: "カレンダー上のステッカーをタップで5段階の拡大縮小、ダブルタップで回転、長押しで削除できます。", en: "Tap stickers on calendar to resize (5 levels), double-tap to rotate, long press to delete." },
 

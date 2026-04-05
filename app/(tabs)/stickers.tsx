@@ -6,10 +6,11 @@ import { useDiary } from "@/lib/diary-context";
 import { useColors } from "@/hooks/use-colors";
 import { type CalendarDeco } from "@/lib/diary-storage";
 import { CAT_STICKERS } from "@/lib/cat-stickers";
+import { CAT2_STICKERS } from "@/lib/cat2-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { useI18n } from "@/lib/i18n";
 
-type MainTab = "item" | "cat";
+type MainTab = "item" | "cat" | "cat2";
 
 export default function StickersScreen() {
   const colors = useColors();
@@ -57,6 +58,43 @@ export default function StickersScreen() {
     [calendarDecos, setCalendarDecos]
   );
 
+  const handleAddCat2Sticker = useCallback(
+    (cat2Id: string) => {
+      if (calendarDecos.length >= 20) {
+        Alert.alert(t("calendar.decoLimit"), t("calendar.decoLimitMsg"));
+        return;
+      }
+      const newDeco: CalendarDeco = {
+        id: `deco_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        emoji: "",
+        cat2StickerId: cat2Id,
+        x: 10 + Math.random() * 70,
+        y: 10 + Math.random() * 70,
+        scale: 1.0,
+        rotation: 0,
+      };
+      setCalendarDecos([...calendarDecos, newDeco]);
+    },
+    [calendarDecos, setCalendarDecos]
+  );
+
+  const renderTabButton = (tab: MainTab, label: string) => (
+    <Pressable
+      onPress={() => setMainTab(tab)}
+      style={({ pressed }) => [
+        styles.mainTab,
+        {
+          backgroundColor: mainTab === tab ? colors.primary : colors.surface,
+          borderColor: mainTab === tab ? colors.primary : colors.border,
+        },
+        pressed && { opacity: 0.8 },
+      ]}
+    >
+      <Text style={[styles.mainTabText, { color: mainTab === tab ? "#FFFFFF" : colors.foreground }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
 
   return (
     <ScreenContainer className="px-4 pt-2">
@@ -73,38 +111,11 @@ export default function StickersScreen() {
           {t("stickers.scaleHint")}
         </Text>
 
-        {/* Main tabs: アイテム / ネコ */}
+        {/* Main tabs: アイテム / ネコ / ネコ2 */}
         <View style={styles.mainTabRow}>
-          <Pressable
-            onPress={() => setMainTab("item")}
-            style={({ pressed }) => [
-              styles.mainTab,
-              {
-                backgroundColor: mainTab === "item" ? colors.primary : colors.surface,
-                borderColor: mainTab === "item" ? colors.primary : colors.border,
-              },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            <Text style={[styles.mainTabText, { color: mainTab === "item" ? "#FFFFFF" : colors.foreground }]}>
-              {t("stickers.itemTab")}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setMainTab("cat")}
-            style={({ pressed }) => [
-              styles.mainTab,
-              {
-                backgroundColor: mainTab === "cat" ? colors.primary : colors.surface,
-                borderColor: mainTab === "cat" ? colors.primary : colors.border,
-              },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            <Text style={[styles.mainTabText, { color: mainTab === "cat" ? "#FFFFFF" : colors.foreground }]}>
-              {t("stickers.catTab")}
-            </Text>
-          </Pressable>
+          {renderTabButton("item", t("stickers.itemTab"))}
+          {renderTabButton("cat", t("stickers.catTab"))}
+          {renderTabButton("cat2", t("stickers.cat2Tab"))}
         </View>
 
         {mainTab === "item" ? (
@@ -122,7 +133,7 @@ export default function StickersScreen() {
               </Pressable>
             ))}
           </View>
-        ) : (
+        ) : mainTab === "cat" ? (
           <View style={[styles.stickerGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {CAT_STICKERS.map((cat) => (
               <Pressable
@@ -134,6 +145,21 @@ export default function StickersScreen() {
                 ]}
               >
                 <Image source={cat.source} style={styles.stickerImage} resizeMode="contain" />
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.stickerGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {CAT2_STICKERS.map((cat2) => (
+              <Pressable
+                key={cat2.id}
+                onPress={() => handleAddCat2Sticker(cat2.id)}
+                style={({ pressed }) => [
+                  styles.stickerCell,
+                  { backgroundColor: pressed ? colors.border : "transparent" },
+                ]}
+              >
+                <Image source={cat2.source} style={styles.stickerImage} resizeMode="contain" />
               </Pressable>
             ))}
           </View>
