@@ -63,6 +63,13 @@ export default function CalendarScreen() {
     setSelectedDate(null);
   }, [month]);
 
+  const handleToday = useCallback(() => {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+    setSelectedDate(null);
+  }, []);
+
   const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date);
     const entry = getEntryForDate(date);
@@ -221,6 +228,7 @@ export default function CalendarScreen() {
             onSelectDate={handleSelectDate}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
+            onToday={handleToday}
           />
 
           {containerSize.width > 0 &&

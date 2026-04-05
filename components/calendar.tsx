@@ -31,6 +31,7 @@ interface CalendarProps {
   onSelectDate: (date: string) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onToday: () => void;
 }
 
 export function Calendar({
@@ -41,6 +42,7 @@ export function Calendar({
   onSelectDate,
   onPrevMonth,
   onNextMonth,
+  onToday,
 }: CalendarProps) {
   const colors = useColors();
   const { language } = useI18n();
@@ -50,6 +52,9 @@ export function Calendar({
   const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
   const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const monthLabel = language === "en" ? `${MONTH_NAMES_EN[month]} ${year}` : `${year}年${month + 1}月`;
+
+  const todayDate = new Date();
+  const isCurrentMonth = year === todayDate.getFullYear() && month === todayDate.getMonth();
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
@@ -91,7 +96,20 @@ export function Calendar({
         >
           <Text style={[styles.navButtonText, { color: colors.foreground }]}>◀</Text>
         </Pressable>
-        <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+        <Pressable
+          onPress={onToday}
+          style={({ pressed }) => [
+            styles.monthLabelBtn,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+          {!isCurrentMonth && (
+            <View style={[styles.todayBadge, { backgroundColor: colors.primary }]}>
+              <Text style={styles.todayBadgeText}>{language === "en" ? "Today" : "今日"}</Text>
+            </View>
+          )}
+        </Pressable>
         <Pressable
           onPress={onNextMonth}
           style={({ pressed }) => [
@@ -257,5 +275,19 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
     marginTop: 2,
+  },
+  monthLabelBtn: {
+    alignItems: "center",
+  },
+  todayBadge: {
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  todayBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "700",
   },
 });
