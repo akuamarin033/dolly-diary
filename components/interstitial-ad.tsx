@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Modal, Image } from "react-native";
+import { useEffect, useState, useRef } from "react";
+import { View, Text, StyleSheet, Pressable, Modal, Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { useI18n } from "@/lib/i18n";
 
@@ -13,13 +13,64 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
   const { t } = useI18n();
   const [countdown, setCountdown] = useState(3);
   const [canClose, setCanClose] = useState(false);
+  const [nativeAdHandled, setNativeAdHandled] = useState(false);
 
+  // Native AdMob interstitial
+  useEffect(() => {
+    if (!visible || Platform.OS === "web") return;
+
+    let unsubLoaded: (() => void) | null = null;
+    let unsubClosed: (() => void) | null = null;
+    let unsubError: (() => void) | null = null;
+
+    try {
+      const admob = require("react-native-google-mobile-ads");
+      const config = require("@/lib/admob-config");
+      const InterstitialAdClass = admob.InterstitialAd;
+      const AdEventTypeEnum = admob.AdEventType;
+
+      const interstitial = InterstitialAdClass.createForAdRequest(config.ADMOB_INTERSTITIAL_ID, {
+        requestNonPersonalizedAdsOnly: true,
+      });
+
+      unsubLoaded = interstitial.addAdEventListener(AdEventTypeEnum.LOADED, () => {
+        interstitial.show();
+        setNativeAdHandled(true);
+      });
+
+      unsubClosed = interstitial.addAdEventListener(AdEventTypeEnum.CLOSED, () => {
+        onClose();
+        setNativeAdHandled(false);
+      });
+
+      unsubError = interstitial.addAdEventListener(AdEventTypeEnum.ERROR, (error: any) => {
+        console.log("Interstitial ad error:", error);
+        setNativeAdHandled(false);
+      });
+
+      interstitial.load();
+    } catch (e) {
+      console.log("AdMob interstitial not available:", e);
+      setNativeAdHandled(false);
+    }
+
+    return () => {
+      unsubLoaded?.();
+      unsubClosed?.();
+      unsubError?.();
+    };
+  }, [visible]);
+
+  // Web fallback countdown
   useEffect(() => {
     if (!visible) {
       setCountdown(3);
       setCanClose(false);
       return;
     }
+
+    // On native, don't show web fallback
+    if (Platform.OS !== "web") return;
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -37,6 +88,12 @@ export function InterstitialAd({ visible, onClose }: InterstitialAdProps) {
 
   if (!visible) return null;
 
+  // On native, the AdMob SDK handles the full-screen ad display
+  if (Platform.OS !== "web") {
+    return null;
+  }
+
+  // Web fallback - placeholder interstitial
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={canClose ? onClose : undefined}>
       <View style={styles.overlay}>
