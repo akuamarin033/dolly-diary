@@ -9,8 +9,11 @@ import {
   Image,
   LayoutChangeEvent,
   Alert,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { Calendar } from "@/components/calendar";
@@ -188,6 +191,27 @@ export default function CalendarScreen() {
     setContainerSize({ width, height });
   }, []);
 
+  // Refs for swipe handlers (to avoid stale closures in worklets)
+  const handlePrevMonthRef = useRef(handlePrevMonth);
+  handlePrevMonthRef.current = handlePrevMonth;
+  const handleNextMonthRef = useRef(handleNextMonth);
+  handleNextMonthRef.current = handleNextMonth;
+
+  const swipeGesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .activeOffsetX([-30, 30])
+      .failOffsetY([-15, 15])
+      .runOnJS(true)
+      .onEnd((e) => {
+        if (e.translationX > 50) {
+          handlePrevMonthRef.current();
+        } else if (e.translationX < -50) {
+          handleNextMonthRef.current();
+        }
+      });
+    return pan;
+  }, []);
+
   return (
     <ScreenContainer className="px-4 pt-2">
         {/* Header with streak */}
@@ -219,6 +243,7 @@ export default function CalendarScreen() {
         <BannerAd />
 
         {/* Calendar with deco overlay */}
+        <GestureDetector gesture={swipeGesture}>
         <View style={styles.calendarWrapper} onLayout={handleCalendarLayout}>
           <Calendar
             year={year}
@@ -245,6 +270,7 @@ export default function CalendarScreen() {
               />
             ))}
         </View>
+        </GestureDetector>
 
 
 

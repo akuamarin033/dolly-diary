@@ -12,7 +12,7 @@ const translations = {
   "tab.diary": { ja: "日記", en: "Diary" },
   "tab.list": { ja: "一覧", en: "List" },
   "tab.stamps": { ja: "スタンプ", en: "Stamps" },
-  "tab.profile": { ja: "プロフィール", en: "Profile" },
+  "tab.settings": { ja: "設定", en: "Settings" },
 
   // Calendar screen
   "calendar.title": { ja: "カレンダー", en: "Calendar" },
