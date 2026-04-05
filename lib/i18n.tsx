@@ -138,6 +138,12 @@ const translations = {
   "mood.surprised": { ja: "驚き", en: "Surprised" },
   "mood.neutral": { ja: "普通", en: "Neutral" },
   "mood.sad": { ja: "悲しい", en: "Sad" },
+  "mood.love": { ja: "ラブ", en: "Love" },
+  "mood.rage": { ja: "激怒", en: "Rage" },
+  "mood.calm": { ja: "穏やか", en: "Calm" },
+  "mood.tired": { ja: "疲れ", en: "Tired" },
+  "mood.annoyed": { ja: "困惑", en: "Annoyed" },
+  "mood.tantrum": { ja: "大激怒", en: "Tantrum" },
 
   // Weather labels
   "weather.sunny": { ja: "晴れ", en: "Sunny" },

@@ -24,6 +24,12 @@ export const MOOD_STAMPS: MoodStamp[] = [
   { id: "surprised", label: "驚き", source: require("@/assets/images/mood-stamps/mood-surprised.png") },
   { id: "neutral", label: "普通", source: require("@/assets/images/mood-stamps/mood-neutral.png") },
   { id: "sad", label: "悲しい", source: require("@/assets/images/mood-stamps/mood-sad.png") },
+  { id: "love", label: "ラブ", source: require("@/assets/images/mood-stamps/mood-love.png") },
+  { id: "rage", label: "激怒", source: require("@/assets/images/mood-stamps/mood-rage.png") },
+  { id: "calm", label: "穏やか", source: require("@/assets/images/mood-stamps/mood-calm.png") },
+  { id: "tired", label: "疲れ", source: require("@/assets/images/mood-stamps/mood-tired.png") },
+  { id: "annoyed", label: "困惑", source: require("@/assets/images/mood-stamps/mood-annoyed.png") },
+  { id: "tantrum", label: "大激怒", source: require("@/assets/images/mood-stamps/mood-tantrum.png") },
 ];
 
 export const WEATHER_STAMPS: WeatherStamp[] = [

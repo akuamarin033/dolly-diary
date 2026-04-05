@@ -107,7 +107,7 @@ describe("getEntriesForMonth", () => {
 
 describe("MOOD constants", () => {
   it("has all moods defined", () => {
-    const moods: Mood[] = ["happy", "sad", "angry", "worried", "depressed", "neutral", "excited"];
+    const moods: Mood[] = ["happy", "sad", "angry", "worried", "depressed", "neutral", "excited", "love", "rage", "calm", "tired", "annoyed", "tantrum"];
     for (const m of moods) {
       expect(MOOD_CAT_IDS[m]).toBeDefined();
       expect(MOOD_LABELS[m]).toBeDefined();

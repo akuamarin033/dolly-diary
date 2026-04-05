@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // === Mood Types (Cat face stickers) ===
-export type Mood = "happy" | "laugh" | "excited" | "worried" | "depressed" | "cry" | "angry" | "surprised" | "neutral" | "sad";
+export type Mood = "happy" | "laugh" | "excited" | "worried" | "depressed" | "cry" | "angry" | "surprised" | "neutral" | "sad" | "love" | "rage" | "calm" | "tired" | "annoyed" | "tantrum";
 
 export const MOOD_LABELS: Record<Mood, string> = {
   happy: "嬉しい",
@@ -14,6 +14,12 @@ export const MOOD_LABELS: Record<Mood, string> = {
   surprised: "驚き",
   neutral: "普通",
   sad: "悲しい",
+  love: "ラブ",
+  rage: "激怒",
+  calm: "穏やか",
+  tired: "疲れ",
+  annoyed: "困惑",
+  tantrum: "大激怒",
 };
 
 // Cat mood sticker IDs map to cat sticker images (cat01-cat10)
@@ -28,6 +34,12 @@ export const MOOD_CAT_IDS: Record<Mood, string> = {
   surprised: "cat08",
   neutral: "cat09",
   sad: "cat10",
+  love: "cat11",
+  rage: "cat20",
+  calm: "cat21",
+  tired: "cat22",
+  annoyed: "cat23",
+  tantrum: "cat24",
 };
 
 // === Weather Types (Cat weather stickers) ===
