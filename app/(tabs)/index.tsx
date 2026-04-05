@@ -35,7 +35,9 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { entries, getEntryForDate, calendarDecos, setCalendarDecos, streak } = useDiary();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+
+  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -45,6 +47,7 @@ export default function CalendarScreen() {
   const [decoTab, setDecoTab] = useState<DecoTab>("item");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const entryDates = useMemo(() => getEntriesForMonth(entries, year, month), [entries, year, month]);
+  const monthLabel = language === "en" ? `${MONTH_NAMES_EN[month]} ${year}` : `${year}年${month + 1}月`;
 
   const handlePrevMonth = useCallback(() => {
     if (month === 0) {
@@ -214,33 +217,58 @@ export default function CalendarScreen() {
 
   return (
     <ScreenContainer className="px-4 pt-2">
-        {/* Header with streak */}
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.foreground }]}>{t("calendar.title")}</Text>
-          <View style={styles.headerRight}>
-            {streak.currentStreak > 0 && (
-              <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
-                <Text style={styles.streakEmoji}>🔥</Text>
-                <Text style={[styles.streakText, { color: colors.warning }]}>
-                  {streak.currentStreak}{t("calendar.streakDays")}
-                </Text>
-              </View>
-            )}
-            <Pressable
-              onPress={() => setShowDecoModal(true)}
-              style={({ pressed }) => [
-                styles.addDecoBtn,
-                { backgroundColor: colors.primary },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <Text style={styles.addDecoBtnText}>{t("calendar.addDeco")}</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Banner ad */}
+        {/* Banner ad - top */}
         <BannerAd />
+
+        {/* Month navigation + Deco button row */}
+        <View style={styles.navRow}>
+          <Pressable
+            onPress={handlePrevMonth}
+            style={({ pressed }) => [
+              styles.navArrow,
+              pressed && { opacity: 0.6 },
+            ]}
+          >
+            <Text style={[styles.navArrowText, { color: colors.muted }]}>◀</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleToday}
+            style={({ pressed }) => [
+              styles.monthLabelBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleNextMonth}
+            style={({ pressed }) => [
+              styles.navArrow,
+              pressed && { opacity: 0.6 },
+            ]}
+          >
+            <Text style={[styles.navArrowText, { color: colors.muted }]}>▶</Text>
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          {streak.currentStreak > 0 && (
+            <View style={[styles.streakBadge, { backgroundColor: colors.warning + "22" }]}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+              <Text style={[styles.streakText, { color: colors.warning }]}>
+                {streak.currentStreak}{t("calendar.streakDays")}
+              </Text>
+            </View>
+          )}
+          <Pressable
+            onPress={() => setShowDecoModal(true)}
+            style={({ pressed }) => [
+              styles.addDecoBtn,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <Text style={[styles.addDecoBtnText, { color: colors.foreground }]}>{t("calendar.addDeco")}</Text>
+          </Pressable>
+        </View>
 
         {/* Calendar with deco overlay */}
         <GestureDetector gesture={swipeGesture}>
@@ -251,9 +279,6 @@ export default function CalendarScreen() {
             selectedDate={selectedDate}
             entryDates={entryDates}
             onSelectDate={handleSelectDate}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-            onToday={handleToday}
           />
 
           {containerSize.width > 0 &&
@@ -371,20 +396,27 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  headerRight: {
+  navRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginBottom: 8,
+  },
+  navArrow: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navArrowText: {
+    fontSize: 16,
+  },
+  monthLabelBtn: {
+    alignItems: "center",
+  },
+  monthLabel: {
+    fontSize: 22,
+    fontWeight: "800",
   },
   streakBadge: {
     flexDirection: "row",
@@ -402,12 +434,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   addDecoBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   addDecoBtnText: {
-    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -415,52 +447,7 @@ const styles = StyleSheet.create({
     position: "relative",
     flex: 1,
   },
-  motivCard: {
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  motivText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  selectedCard: {
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  entryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  entryInfo: {
-    flex: 1,
-  },
-  entryTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  entryDate: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  chevron: {
-    fontSize: 24,
-    fontWeight: "300",
-  },
-  emptyState: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  emptyText: {
-    fontSize: 14,
-  },
+
   // Modal styles
   modalOverlay: {
     flex: 1,

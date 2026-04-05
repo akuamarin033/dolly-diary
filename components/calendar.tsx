@@ -8,7 +8,7 @@ const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // Month-specific background colors (soft pastel tones)
-const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
+export const MONTH_COLORS: Record<number, { bg: string; headerBg: string }> = {
   0: { bg: "#F0F4FF", headerBg: "#D6E4FF" },  // January - 冬の青
   1: { bg: "#FFF0F5", headerBg: "#FFD6E7" },  // February - バレンタインピンク
   2: { bg: "#F0FFF0", headerBg: "#D4F5D4" },  // March - 春の緑
@@ -29,9 +29,6 @@ interface CalendarProps {
   selectedDate: string | null;
   entryDates: Set<string>;
   onSelectDate: (date: string) => void;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
-  onToday: () => void;
 }
 
 export function Calendar({
@@ -40,9 +37,6 @@ export function Calendar({
   selectedDate,
   entryDates,
   onSelectDate,
-  onPrevMonth,
-  onNextMonth,
-  onToday,
 }: CalendarProps) {
   const colors = useColors();
   const { language } = useI18n();
@@ -50,11 +44,6 @@ export function Calendar({
   const monthColor = MONTH_COLORS[month] ?? MONTH_COLORS[0];
 
   const WEEKDAYS = language === "en" ? WEEKDAYS_EN : WEEKDAYS_JA;
-  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const monthLabel = language === "en" ? `${MONTH_NAMES_EN[month]} ${year}` : `${year}年${month + 1}月`;
-
-  const todayDate = new Date();
-  const isCurrentMonth = year === todayDate.getFullYear() && month === todayDate.getMonth();
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
@@ -67,7 +56,7 @@ export function Calendar({
     for (let d = 1; d <= daysInMonth; d++) {
       days.push(d);
     }
-    // Fill remaining cells
+    // Fill remaining cells to complete weeks
     while (days.length % 7 !== 0) {
       days.push(null);
     }
@@ -84,44 +73,6 @@ export function Calendar({
 
   return (
     <View style={[styles.container, { backgroundColor: monthColor.bg, borderColor: colors.border }]}>
-      {/* Month navigation header */}
-      <View style={[styles.header, { backgroundColor: monthColor.headerBg }]}>
-        <Pressable
-          onPress={onPrevMonth}
-          style={({ pressed }) => [
-            styles.navButton,
-            { backgroundColor: "rgba(255,255,255,0.6)" },
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <Text style={[styles.navButtonText, { color: colors.foreground }]}>◀</Text>
-        </Pressable>
-        <Pressable
-          onPress={onToday}
-          style={({ pressed }) => [
-            styles.monthLabelBtn,
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <Text style={[styles.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
-          {!isCurrentMonth && (
-            <View style={[styles.todayBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.todayBadgeText}>{language === "en" ? "Today" : "今日"}</Text>
-            </View>
-          )}
-        </Pressable>
-        <Pressable
-          onPress={onNextMonth}
-          style={({ pressed }) => [
-            styles.navButton,
-            { backgroundColor: "rgba(255,255,255,0.6)" },
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <Text style={[styles.navButtonText, { color: colors.foreground }]}>▶</Text>
-        </Pressable>
-      </View>
-
       {/* Weekday headers */}
       <View style={styles.weekdayRow}>
         {WEEKDAYS.map((day, i) => (
@@ -145,7 +96,7 @@ export function Calendar({
         <View key={wi} style={styles.weekRow}>
           {week.map((day, di) => {
             if (day === null) {
-              return <View key={`empty-${di}`} style={styles.dayCell} />;
+              return <View key={`empty-${di}`} style={[styles.dayCell, styles.dayCellBorder]} />;
             }
 
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -160,12 +111,10 @@ export function Calendar({
                 style={({ pressed }) => [
                   styles.dayCell,
                   styles.dayCellBorder,
-                  isSelected && { backgroundColor: colors.primary, borderRadius: 8, borderColor: colors.primary },
                   isToday && !isSelected && {
-                    backgroundColor: `${colors.primary}22`,
-                    borderRadius: 8,
-                    borderColor: colors.primary,
+                    backgroundColor: `${colors.primary}18`,
                   },
+                  isSelected && { backgroundColor: `${colors.primary}30` },
                   pressed && { opacity: 0.7 },
                 ]}
               >
@@ -174,15 +123,13 @@ export function Calendar({
                     styles.dayText,
                     {
                       color:
-                        isSelected
-                          ? "#FFFFFF"
-                          : di === 0
-                            ? colors.error
-                            : di === 6
-                              ? colors.primary
-                              : colors.foreground,
+                        di === 0
+                          ? colors.error
+                          : di === 6
+                            ? colors.primary
+                            : colors.foreground,
                     },
-                    isToday && !isSelected && { fontWeight: "700" },
+                    isToday && { fontWeight: "800" },
                   ]}
                 >
                   {day}
@@ -192,7 +139,7 @@ export function Calendar({
                     style={[
                       styles.dot,
                       {
-                        backgroundColor: isSelected ? "#FFFFFF" : colors.primary,
+                        backgroundColor: colors.primary,
                       },
                     ]}
                   />
@@ -208,47 +155,23 @@ export function Calendar({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: "hidden",
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-  },
-  navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navButtonText: {
-    fontSize: 14,
-  },
-  monthLabel: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
   weekdayRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   weekdayCell: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 4,
   },
   weekdayText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
   },
   weekRow: {
     flexDirection: "row",
@@ -258,16 +181,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 4,
-    margin: 1,
+    paddingVertical: 2,
   },
   dayCellBorder: {
     borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    borderRadius: 6,
+    borderColor: "rgba(0,0,0,0.06)",
   },
   dayText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
   },
   dot: {
@@ -275,19 +196,5 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
     marginTop: 2,
-  },
-  monthLabelBtn: {
-    alignItems: "center",
-  },
-  todayBadge: {
-    marginTop: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  todayBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "700",
   },
 });
