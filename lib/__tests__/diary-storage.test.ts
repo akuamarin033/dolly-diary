@@ -83,7 +83,7 @@ describe("getEntriesForMonth", () => {
         date: "2026-05-01",
         title: "Test 3",
         content: "Content 3",
-        mood: "love" as Mood,
+        mood: "happy" as Mood,
         photos: [],
         decoStickers: [],
         createdAt: new Date().toISOString(),
@@ -107,7 +107,7 @@ describe("getEntriesForMonth", () => {
 
 describe("MOOD constants", () => {
   it("has all moods defined", () => {
-    const moods: Mood[] = ["happy", "sad", "angry", "sleepy", "love", "neutral", "excited"];
+    const moods: Mood[] = ["happy", "sad", "angry", "worried", "depressed", "neutral", "excited"];
     for (const m of moods) {
       expect(MOOD_CAT_IDS[m]).toBeDefined();
       expect(MOOD_LABELS[m]).toBeDefined();

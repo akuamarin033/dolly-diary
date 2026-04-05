@@ -1,45 +1,43 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // === Mood Types (Cat face stickers) ===
-export type Mood = "happy" | "laugh" | "excited" | "love" | "angel" | "cry" | "angry" | "surprised" | "neutral" | "sleepy" | "sad";
+export type Mood = "happy" | "laugh" | "excited" | "worried" | "depressed" | "cry" | "angry" | "surprised" | "neutral" | "sad";
 
 export const MOOD_LABELS: Record<Mood, string> = {
   happy: "嬉しい",
   laugh: "笑い",
   excited: "ウキウキ",
-  love: "恋",
-  angel: "天使",
+  worried: "不安",
+  depressed: "落ち込み",
   cry: "泣き",
   angry: "怒り",
   surprised: "驚き",
   neutral: "普通",
-  sleepy: "眠い",
   sad: "悲しい",
 };
 
-// Cat mood sticker IDs map to cat sticker images (cat01-cat11)
+// Cat mood sticker IDs map to cat sticker images (cat01-cat10)
 export const MOOD_CAT_IDS: Record<Mood, string> = {
   happy: "cat01",
   laugh: "cat02",
   excited: "cat03",
-  love: "cat04",
-  angel: "cat05",
+  worried: "cat04",
+  depressed: "cat05",
   cry: "cat06",
   angry: "cat07",
   surprised: "cat08",
   neutral: "cat09",
-  sleepy: "cat10",
-  sad: "cat11",
+  sad: "cat10",
 };
 
 // === Weather Types (Cat weather stickers) ===
-export type Weather = "sunny" | "cloudy" | "rainy" | "umbrella" | "windy" | "snowy" | "rainbow" | "night";
+export type Weather = "sunny" | "cloudy" | "rainy" | "thunder" | "windy" | "snowy" | "rainbow" | "night";
 
 export const WEATHER_LABELS: Record<Weather, string> = {
   sunny: "晴れ",
   cloudy: "曇り",
   rainy: "雨",
-  umbrella: "傘",
+  thunder: "雷",
   windy: "風",
   snowy: "雪",
   rainbow: "虹",
@@ -51,7 +49,7 @@ export const WEATHER_CAT_IDS: Record<Weather, string> = {
   sunny: "cat12",
   cloudy: "cat13",
   rainy: "cat14",
-  umbrella: "cat15",
+  thunder: "cat15",
   snowy: "cat16",
   windy: "cat17",
   rainbow: "cat18",
