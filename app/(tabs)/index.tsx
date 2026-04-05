@@ -34,7 +34,7 @@ type DecoTab = "item" | "cat";
 export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { entries, getEntryForDate, calendarDecos, setCalendarDecos } = useDiary();
+  const { entries, getEntryForDate, calendarDecos, setCalendarDecos, loadDecosForMonth } = useDiary();
   const { t, language } = useI18n();
 
   const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -50,31 +50,46 @@ export default function CalendarScreen() {
   const monthLabel = language === "en" ? `${MONTH_NAMES_EN[month]} ${year}` : `${year}年${month + 1}月`;
 
   const handlePrevMonth = useCallback(() => {
+    let newYear = year;
+    let newMonth = month;
     if (month === 0) {
-      setYear((y) => y - 1);
-      setMonth(11);
+      newYear = year - 1;
+      newMonth = 11;
+      setYear(newYear);
+      setMonth(newMonth);
     } else {
-      setMonth((m) => m - 1);
+      newMonth = month - 1;
+      setMonth(newMonth);
     }
     setSelectedDate(null);
-  }, [month]);
+    loadDecosForMonth(newYear, newMonth);
+  }, [year, month, loadDecosForMonth]);
 
   const handleNextMonth = useCallback(() => {
+    let newYear = year;
+    let newMonth = month;
     if (month === 11) {
-      setYear((y) => y + 1);
-      setMonth(0);
+      newYear = year + 1;
+      newMonth = 0;
+      setYear(newYear);
+      setMonth(newMonth);
     } else {
-      setMonth((m) => m + 1);
+      newMonth = month + 1;
+      setMonth(newMonth);
     }
     setSelectedDate(null);
-  }, [month]);
+    loadDecosForMonth(newYear, newMonth);
+  }, [year, month, loadDecosForMonth]);
 
   const handleToday = useCallback(() => {
     const now = new Date();
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
+    const newYear = now.getFullYear();
+    const newMonth = now.getMonth();
+    setYear(newYear);
+    setMonth(newMonth);
     setSelectedDate(null);
-  }, []);
+    loadDecosForMonth(newYear, newMonth);
+  }, [loadDecosForMonth]);
 
   const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date);

@@ -217,9 +217,21 @@ export function getEntriesForMonth(
   return dates;
 }
 
-// === Calendar Deco ===
-export async function getCalendarDecos(): Promise<CalendarDeco[]> {
+// === Calendar Deco (per-month storage) ===
+function getMonthDecoKey(year: number, month: number): string {
+  return `${CALENDAR_DECO_KEY}_${year}_${String(month + 1).padStart(2, "0")}`;
+}
+
+export async function getCalendarDecos(year?: number, month?: number): Promise<CalendarDeco[]> {
   try {
+    // If year/month provided, get month-specific decos
+    if (year !== undefined && month !== undefined) {
+      const key = getMonthDecoKey(year, month);
+      const data = await AsyncStorage.getItem(key);
+      if (!data) return [];
+      return JSON.parse(data) as CalendarDeco[];
+    }
+    // Fallback: legacy global key (for migration)
     const data = await AsyncStorage.getItem(CALENDAR_DECO_KEY);
     if (!data) return [];
     return JSON.parse(data) as CalendarDeco[];
@@ -228,8 +240,35 @@ export async function getCalendarDecos(): Promise<CalendarDeco[]> {
   }
 }
 
-export async function saveCalendarDecos(decos: CalendarDeco[]): Promise<void> {
-  await AsyncStorage.setItem(CALENDAR_DECO_KEY, JSON.stringify(decos));
+export async function saveCalendarDecos(decos: CalendarDeco[], year?: number, month?: number): Promise<void> {
+  if (year !== undefined && month !== undefined) {
+    const key = getMonthDecoKey(year, month);
+    await AsyncStorage.setItem(key, JSON.stringify(decos));
+  } else {
+    await AsyncStorage.setItem(CALENDAR_DECO_KEY, JSON.stringify(decos));
+  }
+}
+
+// Migrate legacy global decos to the current month (one-time)
+export async function migrateGlobalDecosToMonth(year: number, month: number): Promise<CalendarDeco[]> {
+  try {
+    const globalData = await AsyncStorage.getItem(CALENDAR_DECO_KEY);
+    if (!globalData) return [];
+    const globalDecos = JSON.parse(globalData) as CalendarDeco[];
+    if (globalDecos.length === 0) return [];
+    // Save to current month
+    const key = getMonthDecoKey(year, month);
+    const existingData = await AsyncStorage.getItem(key);
+    if (!existingData) {
+      // Only migrate if no month-specific data exists yet
+      await AsyncStorage.setItem(key, JSON.stringify(globalDecos));
+    }
+    // Remove global key to prevent re-migration
+    await AsyncStorage.removeItem(CALENDAR_DECO_KEY);
+    return existingData ? (JSON.parse(existingData) as CalendarDeco[]) : globalDecos;
+  } catch {
+    return [];
+  }
 }
 
 // === Streak ===
@@ -327,17 +366,41 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 // === Backup / Export ===
 export async function exportAllData(): Promise<string> {
   const entries = await getAllEntries();
-  const calendarDecos = await getCalendarDecos();
+  // Export all month-specific decos
+  const allKeys = await AsyncStorage.getAllKeys();
+  const decoKeys = allKeys.filter((k) => k.startsWith(CALENDAR_DECO_KEY + "_"));
+  const monthDecos: Record<string, CalendarDeco[]> = {};
+  for (const key of decoKeys) {
+    const data = await AsyncStorage.getItem(key);
+    if (data) monthDecos[key] = JSON.parse(data) as CalendarDeco[];
+  }
+  // Also export legacy global if it exists
+  const globalDecos = await AsyncStorage.getItem(CALENDAR_DECO_KEY);
   const streak = await getStreak();
   const settings = await getSettings();
-  return JSON.stringify({ entries, calendarDecos, streak, settings }, null, 2);
+  return JSON.stringify({
+    entries,
+    calendarDecos: globalDecos ? JSON.parse(globalDecos) : [],
+    monthCalendarDecos: monthDecos,
+    streak,
+    settings,
+  }, null, 2);
 }
 
 export async function importAllData(jsonStr: string): Promise<boolean> {
   try {
     const data = JSON.parse(jsonStr);
     if (data.entries) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data.entries));
-    if (data.calendarDecos) await AsyncStorage.setItem(CALENDAR_DECO_KEY, JSON.stringify(data.calendarDecos));
+    // Import legacy global decos
+    if (data.calendarDecos && !data.monthCalendarDecos) {
+      await AsyncStorage.setItem(CALENDAR_DECO_KEY, JSON.stringify(data.calendarDecos));
+    }
+    // Import month-specific decos
+    if (data.monthCalendarDecos) {
+      for (const [key, decos] of Object.entries(data.monthCalendarDecos)) {
+        await AsyncStorage.setItem(key, JSON.stringify(decos));
+      }
+    }
     if (data.streak) await AsyncStorage.setItem(STREAK_KEY, JSON.stringify(data.streak));
     if (data.settings) await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
     return true;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {
   type DiaryEntry,
   type Mood,
@@ -12,6 +12,7 @@ import {
   searchEntries,
   getCalendarDecos,
   saveCalendarDecos,
+  migrateGlobalDecosToMonth,
   updateStreak,
   getStreak,
 } from "./diary-storage";
@@ -32,9 +33,12 @@ interface DiaryContextType {
   removeEntry: (id: string) => Promise<boolean>;
   search: (query: string) => Promise<DiaryEntry[]>;
   getEntryForDate: (date: string) => DiaryEntry | undefined;
-  // Calendar decos
+  // Calendar decos (per-month)
   calendarDecos: CalendarDeco[];
   setCalendarDecos: (decos: CalendarDeco[]) => Promise<void>;
+  loadDecosForMonth: (year: number, month: number) => Promise<void>;
+  currentDecoYear: number;
+  currentDecoMonth: number;
   // Streak
   streak: StreakData;
   // Reload all data (for restore)
@@ -49,21 +53,44 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   const [calendarDecos, setCalendarDecosState] = useState<CalendarDeco[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, lastEntryDate: "", longestStreak: 0 });
 
+  const now = new Date();
+  const [currentDecoYear, setCurrentDecoYear] = useState(now.getFullYear());
+  const [currentDecoMonth, setCurrentDecoMonth] = useState(now.getMonth());
+  const migratedRef = useRef(false);
+
+  const loadDecosForMonth = useCallback(async (year: number, month: number) => {
+    setCurrentDecoYear(year);
+    setCurrentDecoMonth(month);
+
+    // One-time migration from global to current month
+    if (!migratedRef.current) {
+      migratedRef.current = true;
+      const migrated = await migrateGlobalDecosToMonth(year, month);
+      if (migrated.length > 0) {
+        setCalendarDecosState(migrated);
+        return;
+      }
+    }
+
+    const decos = await getCalendarDecos(year, month);
+    setCalendarDecosState(decos);
+  }, []);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, decos, streakData] = await Promise.all([
+      const [data, streakData] = await Promise.all([
         getAllEntries(),
-        getCalendarDecos(),
         getStreak(),
       ]);
       setEntries(data.sort((a, b) => b.date.localeCompare(a.date)));
-      setCalendarDecosState(decos);
       setStreak(streakData);
+      // Load decos for current month
+      await loadDecosForMonth(currentDecoYear, currentDecoMonth);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentDecoYear, currentDecoMonth, loadDecosForMonth]);
 
   useEffect(() => {
     refresh();
@@ -123,9 +150,9 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setCalendarDecosHandler = useCallback(async (decos: CalendarDeco[]) => {
-    await saveCalendarDecos(decos);
+    await saveCalendarDecos(decos, currentDecoYear, currentDecoMonth);
     setCalendarDecosState(decos);
-  }, []);
+  }, [currentDecoYear, currentDecoMonth]);
 
   return (
     <DiaryContext.Provider
@@ -140,6 +167,9 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         getEntryForDate,
         calendarDecos,
         setCalendarDecos: setCalendarDecosHandler,
+        loadDecosForMonth,
+        currentDecoYear,
+        currentDecoMonth,
         streak,
         reload: refresh,
       }}
