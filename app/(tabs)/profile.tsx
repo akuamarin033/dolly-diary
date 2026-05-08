@@ -117,8 +117,10 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             try {
+              // Use */* to allow Google Drive files to be selectable
+              // Google Drive may not recognize application/json for .json files
               const result = await DocumentPicker.getDocumentAsync({
-                type: "application/json",
+                type: "*/*",
                 copyToCacheDirectory: true,
               });
 
@@ -127,6 +129,13 @@ export default function ProfileScreen() {
               }
 
               const asset = result.assets[0];
+              
+              // Verify it's a JSON file by name
+              if (!asset.name?.toLowerCase().endsWith(".json")) {
+                Alert.alert("エラー", "JSONファイルを選択してください。");
+                return;
+              }
+
               let jsonStr: string;
 
               if (Platform.OS === "web") {
@@ -134,10 +143,25 @@ export default function ProfileScreen() {
                 const response = await fetch(asset.uri);
                 jsonStr = await response.text();
               } else {
-                // Native: read from file
-                jsonStr = await FileSystem.readAsStringAsync(asset.uri, {
-                  encoding: FileSystem.EncodingType.UTF8,
-                });
+                // Native: copy to local cache first, then read
+                // This ensures Google Drive / cloud files are fully downloaded
+                const localPath = FileSystem.cacheDirectory + `restore-${Date.now()}.json`;
+                try {
+                  await FileSystem.copyAsync({
+                    from: asset.uri,
+                    to: localPath,
+                  });
+                  jsonStr = await FileSystem.readAsStringAsync(localPath, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                  });
+                  // Clean up temp file
+                  await FileSystem.deleteAsync(localPath, { idempotent: true });
+                } catch (copyErr) {
+                  // Fallback: try reading directly
+                  jsonStr = await FileSystem.readAsStringAsync(asset.uri, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                  });
+                }
               }
 
               const success = await importAllData(jsonStr);
@@ -148,8 +172,9 @@ export default function ProfileScreen() {
               } else {
                 Alert.alert("エラー", "バックアップファイルの形式が正しくありません。");
               }
-            } catch (e) {
-              Alert.alert("エラー", "データの復元に失敗しました。");
+            } catch (e: any) {
+              console.log("Restore error:", e?.message || e);
+              Alert.alert("エラー", "データの復元に失敗しました。\n" + (e?.message || ""));
             }
           },
         },
