@@ -77,10 +77,9 @@ export default function ProfileScreen() {
 
   // === Backup (Export) ===
   const handleBackup = useCallback(async () => {
-    try {
-      const data = await exportAllData();
-      if (Platform.OS === "web") {
-        // Web: download as file
+    if (Platform.OS === "web") {
+      try {
+        const data = await exportAllData();
         const blob = new Blob([data], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -89,18 +88,85 @@ export default function ProfileScreen() {
         a.click();
         URL.revokeObjectURL(url);
         Alert.alert("完了", "バックアップファイルをダウンロードしました。");
+      } catch (e) {
+        Alert.alert("エラー", "バックアップに失敗しました。");
+      }
+      return;
+    }
+
+    // Native: show backup destination options
+    Alert.alert(
+      "バックアップ先を選択",
+      "バックアップファイルの保存先を選んでください",
+      [
+        {
+          text: "端末内ストレージ",
+          onPress: () => backupToLocalStorage(),
+        },
+        {
+          text: "Google Drive / 共有",
+          onPress: () => backupViaShare(),
+        },
+        { text: "キャンセル", style: "cancel" },
+      ]
+    );
+  }, []);
+
+  // Backup to local storage using SAF (Android) or Share (iOS)
+  const backupToLocalStorage = useCallback(async () => {
+    try {
+      const data = await exportAllData();
+      const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+      if (Platform.OS === "android") {
+        // Android: Use StorageAccessFramework to let user pick a folder
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!permissions.granted) {
+          return;
+        }
+        const dirUri = permissions.directoryUri;
+        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          dirUri,
+          fileName,
+          "application/json"
+        );
+        await FileSystem.writeAsStringAsync(fileUri, data, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        Alert.alert("完了", "バックアップを端末内に保存しました。");
       } else {
-        // Native: save to file and share
-        const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        // iOS: Save to document directory and share
         const fileUri = FileSystem.documentDirectory + fileName;
-        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+        await FileSystem.writeAsStringAsync(fileUri, data, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
         await Share.share({
           url: fileUri,
           title: "Dolly's Diary バックアップ",
-          message: Platform.OS === "android" ? data : undefined,
         });
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.log("Backup to local error:", e?.message || e);
+      Alert.alert("エラー", "バックアップに失敗しました。");
+    }
+  }, []);
+
+  // Backup via Share sheet (Google Drive, etc.)
+  const backupViaShare = useCallback(async () => {
+    try {
+      const data = await exportAllData();
+      const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+      await FileSystem.writeAsStringAsync(fileUri, data, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      await Share.share({
+        url: fileUri,
+        title: "Dolly's Diary バックアップ",
+        message: Platform.OS === "android" ? data : undefined,
+      });
+    } catch (e: any) {
+      console.log("Backup via share error:", e?.message || e);
       Alert.alert("エラー", "バックアップに失敗しました。");
     }
   }, []);
