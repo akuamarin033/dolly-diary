@@ -364,6 +364,8 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 }
 
 // === Backup / Export ===
+
+// Export text-only backup (lightweight, no photos)
 export async function exportAllData(): Promise<string> {
   const entries = await getAllEntries();
   // Export all month-specific decos
@@ -379,6 +381,7 @@ export async function exportAllData(): Promise<string> {
   const streak = await getStreak();
   const settings = await getSettings();
   return JSON.stringify({
+    version: 2,
     entries,
     calendarDecos: globalDecos ? JSON.parse(globalDecos) : [],
     monthCalendarDecos: monthDecos,
@@ -387,10 +390,87 @@ export async function exportAllData(): Promise<string> {
   }, null, 2);
 }
 
-export async function importAllData(jsonStr: string): Promise<boolean> {
+// Export full backup including photos as Base64
+export async function exportFullBackup(
+  readFileAsBase64: (uri: string) => Promise<string | null>
+): Promise<string> {
+  const entries = await getAllEntries();
+  // Export all month-specific decos
+  const allKeys = await AsyncStorage.getAllKeys();
+  const decoKeys = allKeys.filter((k) => k.startsWith(CALENDAR_DECO_KEY + "_"));
+  const monthDecos: Record<string, CalendarDeco[]> = {};
+  for (const key of decoKeys) {
+    const data = await AsyncStorage.getItem(key);
+    if (data) monthDecos[key] = JSON.parse(data) as CalendarDeco[];
+  }
+  const globalDecos = await AsyncStorage.getItem(CALENDAR_DECO_KEY);
+  const streak = await getStreak();
+  const settings = await getSettings();
+
+  // Collect all photo URIs and convert to Base64
+  const photoData: Record<string, string> = {};
+  for (const entry of entries) {
+    if (entry.photos && entry.photos.length > 0) {
+      for (const photoUri of entry.photos) {
+        if (photoUri && !photoData[photoUri]) {
+          try {
+            const base64 = await readFileAsBase64(photoUri);
+            if (base64) {
+              photoData[photoUri] = base64;
+            }
+          } catch (e) {
+            console.log("Failed to read photo for backup:", photoUri, e);
+          }
+        }
+      }
+    }
+  }
+
+  return JSON.stringify({
+    version: 2,
+    fullBackup: true,
+    entries,
+    calendarDecos: globalDecos ? JSON.parse(globalDecos) : [],
+    monthCalendarDecos: monthDecos,
+    streak,
+    settings,
+    photoData,
+  }, null, 2);
+}
+
+export async function importAllData(
+  jsonStr: string,
+  writeFileFromBase64?: (fileName: string, base64: string) => Promise<string | null>
+): Promise<boolean> {
   try {
     const data = JSON.parse(jsonStr);
-    if (data.entries) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data.entries));
+
+    // Restore photos if full backup with photoData
+    let photoUriMap: Record<string, string> = {};
+    if (data.fullBackup && data.photoData && writeFileFromBase64) {
+      for (const [originalUri, base64] of Object.entries(data.photoData)) {
+        try {
+          const fileName = `restored_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`;
+          const newUri = await writeFileFromBase64(fileName, base64 as string);
+          if (newUri) {
+            photoUriMap[originalUri] = newUri;
+          }
+        } catch (e) {
+          console.log("Failed to restore photo:", originalUri, e);
+        }
+      }
+    }
+
+    // Update photo URIs in entries if photos were restored
+    let entries = data.entries;
+    if (entries && Object.keys(photoUriMap).length > 0) {
+      entries = entries.map((entry: DiaryEntry) => ({
+        ...entry,
+        photos: entry.photos?.map((uri: string) => photoUriMap[uri] || uri) || [],
+      }));
+    }
+
+    if (entries) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     // Import legacy global decos
     if (data.calendarDecos && !data.monthCalendarDecos) {
       await AsyncStorage.setItem(CALENDAR_DECO_KEY, JSON.stringify(data.calendarDecos));

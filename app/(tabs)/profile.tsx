@@ -9,6 +9,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useThemeContext } from "@/lib/theme-provider";
 import {
   exportAllData,
+  exportFullBackup,
   importAllData,
   getPasscode,
   setPasscode,
@@ -75,6 +76,38 @@ export default function ProfileScreen() {
     Alert.alert("完了", "パスコードが設定されました。");
   }, [passcodeInput]);
 
+  // Helper: read a file as Base64
+  const readFileAsBase64 = useCallback(async (uri: string): Promise<string | null> => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return base64;
+    } catch (e) {
+      console.log("readFileAsBase64 failed:", uri, e);
+      return null;
+    }
+  }, []);
+
+  // Helper: write Base64 data to a local file
+  const writeFileFromBase64 = useCallback(async (fileName: string, base64: string): Promise<string | null> => {
+    try {
+      const dir = FileSystem.documentDirectory + "photos/";
+      const dirInfo = await FileSystem.getInfoAsync(dir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+      }
+      const localUri = dir + fileName;
+      await FileSystem.writeAsStringAsync(localUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return localUri;
+    } catch (e) {
+      console.log("writeFileFromBase64 failed:", fileName, e);
+      return null;
+    }
+  }, []);
+
   // === Backup (Export) ===
   const handleBackup = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -94,18 +127,37 @@ export default function ProfileScreen() {
       return;
     }
 
-    // Native: show backup destination options
+    // Native: show backup type options first
+    Alert.alert(
+      "バックアップの種類を選択",
+      "写真を含めると容量が大きくなります",
+      [
+        {
+          text: "完全バックアップ（写真含む）",
+          onPress: () => selectBackupDestination(true),
+        },
+        {
+          text: "テキストのみ（軽量）",
+          onPress: () => selectBackupDestination(false),
+        },
+        { text: "キャンセル", style: "cancel" },
+      ]
+    );
+  }, []);
+
+  // Select backup destination after choosing type
+  const selectBackupDestination = useCallback((includePhotos: boolean) => {
     Alert.alert(
       "バックアップ先を選択",
       "バックアップファイルの保存先を選んでください",
       [
         {
           text: "端末内ストレージ",
-          onPress: () => backupToLocalStorage(),
+          onPress: () => backupToLocalStorage(includePhotos),
         },
         {
           text: "Google Drive / 共有",
-          onPress: () => backupViaShare(),
+          onPress: () => backupViaShare(includePhotos),
         },
         { text: "キャンセル", style: "cancel" },
       ]
@@ -113,10 +165,13 @@ export default function ProfileScreen() {
   }, []);
 
   // Backup to local storage using SAF (Android) or Share (iOS)
-  const backupToLocalStorage = useCallback(async () => {
+  const backupToLocalStorage = useCallback(async (includePhotos: boolean) => {
     try {
-      const data = await exportAllData();
-      const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      const data = includePhotos
+        ? await exportFullBackup(readFileAsBase64)
+        : await exportAllData();
+      const suffix = includePhotos ? "-full" : "";
+      const fileName = `dollys-diary-backup${suffix}-${new Date().toISOString().slice(0, 10)}.json`;
 
       if (Platform.OS === "android") {
         // Android: Use StorageAccessFramework to let user pick a folder
@@ -133,7 +188,9 @@ export default function ProfileScreen() {
         await FileSystem.writeAsStringAsync(fileUri, data, {
           encoding: FileSystem.EncodingType.UTF8,
         });
-        Alert.alert("完了", "バックアップを端末内に保存しました。");
+        Alert.alert("完了", includePhotos
+          ? "写真を含む完全バックアップを端末内に保存しました。"
+          : "バックアップを端末内に保存しました。");
       } else {
         // iOS: Save to document directory and share
         const fileUri = FileSystem.documentDirectory + fileName;
@@ -149,13 +206,16 @@ export default function ProfileScreen() {
       console.log("Backup to local error:", e?.message || e);
       Alert.alert("エラー", "バックアップに失敗しました。");
     }
-  }, []);
+  }, [readFileAsBase64]);
 
   // Backup via Share sheet (Google Drive, etc.)
-  const backupViaShare = useCallback(async () => {
+  const backupViaShare = useCallback(async (includePhotos: boolean) => {
     try {
-      const data = await exportAllData();
-      const fileName = `dollys-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      const data = includePhotos
+        ? await exportFullBackup(readFileAsBase64)
+        : await exportAllData();
+      const suffix = includePhotos ? "-full" : "";
+      const fileName = `dollys-diary-backup${suffix}-${new Date().toISOString().slice(0, 10)}.json`;
       const fileUri = FileSystem.documentDirectory + fileName;
       await FileSystem.writeAsStringAsync(fileUri, data, {
         encoding: FileSystem.EncodingType.UTF8,
@@ -169,7 +229,7 @@ export default function ProfileScreen() {
       console.log("Backup via share error:", e?.message || e);
       Alert.alert("エラー", "バックアップに失敗しました。");
     }
-  }, []);
+  }, [readFileAsBase64]);
 
   // === Restore (Import) ===
   const handleRestore = useCallback(async () => {
@@ -230,7 +290,7 @@ export default function ProfileScreen() {
                 }
               }
 
-              const success = await importAllData(jsonStr);
+              const success = await importAllData(jsonStr, writeFileFromBase64);
               if (success) {
                 // Reload diary context
                 if (reload) await reload();
