@@ -64,7 +64,7 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
+    permissions: ["POST_NOTIFICATIONS", "READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE"],
     intentFilters: [
       {
         action: "VIEW",
@@ -86,6 +86,13 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "$(PRODUCT_NAME)が写真ライブラリにアクセスすることを許可します。",
+        cameraPermission: "$(PRODUCT_NAME)がカメラにアクセスすることを許可します。"
+      }
+    ],
     [
       "react-native-google-mobile-ads",
       {

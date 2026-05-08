@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import {
   type DiaryEntry,
   type Mood,
+  type Weather,
   type PlacedDeco,
   type CalendarDeco,
   type StreakData,
@@ -26,6 +27,7 @@ interface DiaryContextType {
     title: string;
     content: string;
     mood: Mood;
+    weather?: Weather;
     photos?: string[];
     decoStickers?: PlacedDeco[];
   }) => Promise<DiaryEntry>;
@@ -102,6 +104,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
       title: string;
       content: string;
       mood: Mood;
+      weather?: Weather;
       photos?: string[];
       decoStickers?: PlacedDeco[];
     }) => {

@@ -91,7 +91,7 @@ const translations = {
   "profile.premium": { ja: "プレミアム", en: "Premium" },
   "profile.removeAds": { ja: "広告を非表示", en: "Remove Ads" },
   "profile.removeAdsActive": { ja: "有効中", en: "Active" },
-  "profile.removeAdsPrice": { ja: "¥480で広告を削除", en: "Remove ads for ¥480" },
+  "profile.removeAdsPrice": { ja: "¥300で広告を削除", en: "Remove ads for ¥300" },
   "profile.restorePurchase": { ja: "購入を復元", en: "Restore Purchase" },
   "profile.restorePurchaseDesc": { ja: "以前の購入を復元する", en: "Restore previous purchase" },
   "profile.appVersion": { ja: "v1.0.28 - カレンダー＆日記アプリ", en: "v1.0.28 - Calendar & Diary App" },

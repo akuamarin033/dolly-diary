@@ -20,7 +20,7 @@ import { useI18n } from "@/lib/i18n";
 export default function ProfileScreen() {
   const colors = useColors();
   const { entries, streak, reload } = useDiary();
-  const { isAdFree, purchaseAdFree, restoreAdFree } = useAds();
+  const { isAdFree, purchaseAdFree, restoreAdFree, isPurchasing } = useAds();
   const { gdprApplies, showPrivacyOptions } = useConsent();
   const { colorScheme, setColorScheme } = useThemeContext();
   const { language, setLanguage, t } = useI18n();
@@ -281,27 +281,22 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t("profile.premium")}</Text>
 
           <Pressable
-            onPress={() => {
+            onPress={async () => {
               if (isAdFree) {
                 Alert.alert("広告非表示", "すでに広告非表示が有効です。");
               } else {
-                Alert.alert(
-                  "広告を非表示にする",
-                  "¥480で広告を完全に非表示にします。",
-                  [
-                    { text: "キャンセル", style: "cancel" },
-                    {
-                      text: "購入する",
-                      onPress: async () => {
-                        await purchaseAdFree();
-                        Alert.alert("完了", "広告が非表示になりました。");
-                      },
-                    },
-                  ]
-                );
+                try {
+                  await purchaseAdFree();
+                } catch (err: any) {
+                  const msg = err?.message || String(err);
+                  if (!msg.includes("userCancelled") && !msg.includes("E_USER_CANCELLED")) {
+                    Alert.alert("エラー", "購入に失敗しました。しばらくしてからもう一度お試しください。");
+                  }
+                }
               }
             }}
-            style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+            disabled={isPurchasing}
+            style={({ pressed }) => [styles.settingRow, (pressed || isPurchasing) && { opacity: 0.7 }]}
           >
             <Text style={{ fontSize: 22 }}>✨</Text>
             <View style={styles.settingInfo}>
@@ -316,7 +311,7 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <View style={[styles.premiumBadge, { backgroundColor: colors.primary + "22" }]}>
-                <Text style={[styles.premiumBadgeText, { color: colors.primary }]}>¥480</Text>
+                <Text style={[styles.premiumBadgeText, { color: colors.primary }]}>¥300</Text>
               </View>
             )}
           </Pressable>
@@ -326,8 +321,14 @@ export default function ProfileScreen() {
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <Pressable
                 onPress={async () => {
-                  await restoreAdFree();
-                  Alert.alert("復元", isAdFree ? "購入済みの広告非表示を復元しました。" : "購入履歴が見つかりませんでした。");
+                  try {
+                    await restoreAdFree();
+                    // restoreAdFree updates isAdFree state internally
+                    // Show a generic message since state update is async
+                    Alert.alert("復元", "購入履歴を確認しました。");
+                  } catch {
+                    Alert.alert("エラー", "復元に失敗しました。");
+                  }
                 }}
                 style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
               >

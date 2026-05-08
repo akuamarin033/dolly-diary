@@ -11,10 +11,11 @@ import { ALL_CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { useI18n } from "@/lib/i18n";
 
+
 export default function DiaryListScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { entries, loading, search } = useDiary();
+  const { entries, loading, search, streak } = useDiary();
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DiaryEntry[] | null>(null);
@@ -126,7 +127,25 @@ export default function DiaryListScreen() {
 
   return (
     <ScreenContainer className="px-4 pt-2">
-      <Text style={[styles.title, { color: colors.foreground }]}>{t("list.title")}</Text>
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: colors.foreground }]}>{t("list.title")}</Text>
+        <View style={[styles.statsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{entries.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>日記</Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{streak.currentStreak}</Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>連続</Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{streak.longestStreak}</Text>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>最長</Text>
+          </View>
+        </View>
+      </View>
 
       <View
         style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -155,7 +174,13 @@ export default function DiaryListScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 28, fontWeight: "800", marginBottom: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  title: { fontSize: 28, fontWeight: "800" },
+  statsRow: { flexDirection: "row", alignItems: "center", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, gap: 8 },
+  statItem: { alignItems: "center" },
+  statValue: { fontSize: 14, fontWeight: "700" },
+  statLabel: { fontSize: 10 },
+  statDivider: { width: 1, height: 20 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -175,8 +200,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   moodEmoji: { fontSize: 32 },
-  moodImage: { width: 36, height: 36 },
-  weatherImage: { width: 28, height: 28 },
+  moodImage: { width: 32, height: 32 },
+  weatherImage: { width: 32, height: 32 },
   cardInfo: { flex: 1 },
   cardTitle: { fontSize: 17, fontWeight: "700" },
   cardDate: { fontSize: 13, marginTop: 2 },

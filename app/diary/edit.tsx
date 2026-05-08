@@ -172,6 +172,7 @@ export default function DiaryEditScreen() {
           title: title.trim() || date,
           content: content.trim(),
           mood,
+          weather,
           photos: validPhotos,
         });
       }
