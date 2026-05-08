@@ -119,3 +119,4 @@
 - [x] 写真選択後にアプリローカルストレージにコピーする処理を追加（Samsung/Google Photos互換性）
 - [x] expo-file-systemをインストールしてpackage.jsonに追加
 - [x] mediaTypesを["images"]に戻す（Samsung端末安定性のため）
+- [x] 写真選択エラーのデバッグログ追加（copyAsync前後とcatchブロック）

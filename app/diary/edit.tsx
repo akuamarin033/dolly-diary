@@ -118,6 +118,9 @@ export default function DiaryEditScreen() {
 
       const uri = asset.uri;
 
+      console.log("Picked asset:", asset);
+      console.log("URI:", uri);
+
       if (!uri || typeof uri !== "string" || uri.length === 0) {
         console.warn("ImagePicker returned invalid URI:", uri);
         return;
@@ -127,11 +130,14 @@ export default function DiaryEditScreen() {
       const fileName = `photo-${Date.now()}.jpg`;
       const localUri = FileSystem.documentDirectory + fileName;
 
+      console.log("Attempting copyAsync from:", uri, "to:", localUri);
+
       try {
         await FileSystem.copyAsync({
           from: uri,
           to: localUri,
         });
+        console.log("copyAsync success:", localUri);
 
         setPhotos((prev) => {
           const updated = [...prev];
@@ -150,18 +156,17 @@ export default function DiaryEditScreen() {
       }
     } catch (error: any) {
       setPickingPhoto(null);
-      console.warn("ImagePicker error:", error?.message || error);
-      // Don't show error alert for known Android issues that are non-fatal
-      // e.g. FailedToDeduceTypeException on Samsung devices
-      const errorMsg = error?.message || String(error);
-      if (errorMsg.includes("FailedToDeduceType") || errorMsg.includes("Cannot deduce")) {
-        Alert.alert(
-          t("common.error"),
-          t("diary.photoTypeError" as any)
-        );
-      } else {
-        Alert.alert(t("common.error"), t("diary.photoError" as any));
-      }
+
+      console.log("=== IMAGE PICKER ERROR START ===");
+      console.log(error);
+      console.log(error?.message);
+      console.log(JSON.stringify(error, null, 2));
+      console.log("=== IMAGE PICKER ERROR END ===");
+
+      Alert.alert(
+        "Photo Error",
+        error?.message || JSON.stringify(error)
+      );
     }
   }, [t]);
 
