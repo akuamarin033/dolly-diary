@@ -120,3 +120,5 @@
 - [x] expo-file-systemをインストールしてpackage.jsonに追加
 - [x] mediaTypesを["images"]に戻す（Samsung端末安定性のため）
 - [x] 写真選択エラーのデバッグログ追加（copyAsync前後とcatchブロック）
+- [x] expo-image-pickerをExpo SDK54対応バージョンに固定（~17.0.11）
+- [x] node_modules再構築（rm -rf node_modules && rm pnpm-lock.yaml && pnpm install）
