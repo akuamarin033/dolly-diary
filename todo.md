@@ -116,3 +116,4 @@
 - [x] 日記一覧画面上部に統計情報（日記数・連続日数・最長記録）を1行コンパクト表示
 - [x] Google Play Billing連携による広告削除機能（remove_ads商品300円、仮処理削除）
 - [x] 写真ピッカーのmediaTypesをImagePicker.MediaTypeOptions.Imagesに変更
+- [x] 写真選択後にアプリローカルストレージにコピーする処理を追加（Samsung/Google Photos互換性）

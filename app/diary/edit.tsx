@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useDiary } from "@/lib/diary-context";
@@ -116,16 +117,37 @@ export default function DiaryEditScreen() {
       if (!asset) return;
 
       const uri = asset.uri;
+
       if (!uri || typeof uri !== "string" || uri.length === 0) {
         console.warn("ImagePicker returned invalid URI:", uri);
         return;
       }
 
-      setPhotos((prev) => {
-        const updated = [...prev];
-        updated[index] = uri;
-        return updated;
-      });
+      // Copy to app-local storage for Samsung/Google Photos compatibility
+      const fileName = `photo-${Date.now()}.jpg`;
+      const localUri = FileSystem.documentDirectory + fileName;
+
+      try {
+        await FileSystem.copyAsync({
+          from: uri,
+          to: localUri,
+        });
+
+        setPhotos((prev) => {
+          const updated = [...prev];
+          updated[index] = localUri;
+          return updated;
+        });
+      } catch (copyError) {
+        console.warn("Failed to copy image:", copyError);
+
+        // fallback to original uri
+        setPhotos((prev) => {
+          const updated = [...prev];
+          updated[index] = uri;
+          return updated;
+        });
+      }
     } catch (error: any) {
       setPickingPhoto(null);
       console.warn("ImagePicker error:", error?.message || error);
