@@ -117,3 +117,5 @@
 - [x] Google Play Billing連携による広告削除機能（remove_ads商品300円、仮処理削除）
 - [x] 写真ピッカーのmediaTypesをImagePicker.MediaTypeOptions.Imagesに変更
 - [x] 写真選択後にアプリローカルストレージにコピーする処理を追加（Samsung/Google Photos互換性）
+- [x] expo-file-systemをインストールしてpackage.jsonに追加
+- [x] mediaTypesを["images"]に戻す（Samsung端末安定性のため）
