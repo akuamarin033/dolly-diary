@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from "react";
-import { Text, View, FlatList, Pressable, TextInput, StyleSheet, Image } from "react-native";
+import { Text, View, FlatList, Pressable, TextInput, StyleSheet, Image, Modal, Dimensions, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -11,6 +11,7 @@ import { ALL_CAT_STICKERS } from "@/lib/cat-stickers";
 import { ITEM_STICKERS } from "@/lib/item-stickers";
 import { useI18n } from "@/lib/i18n";
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function DiaryListScreen() {
   const colors = useColors();
@@ -19,6 +20,7 @@ export default function DiaryListScreen() {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DiaryEntry[] | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const displayEntries = searchResults ?? entries;
 
@@ -74,13 +76,27 @@ export default function DiaryListScreen() {
               </Text>
               <Text style={[styles.cardDate, { color: colors.muted }]}>{item.date}</Text>
             </View>
-            {item.photos && item.photos.length > 0 && (
-              <Text style={{ fontSize: 16 }}>📷 {item.photos.length}</Text>
-            )}
           </View>
           <Text style={[styles.cardContent, { color: colors.muted }]} numberOfLines={2}>
             {item.content}
           </Text>
+          {/* Photo thumbnails */}
+          {item.photos && item.photos.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+              {item.photos.map((uri, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => setPreviewPhoto(uri)}
+                  style={({ pressed }) => [
+                    styles.photoThumb,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Image source={{ uri }} style={styles.photoThumbImage} resizeMode="cover" />
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
           {item.decoStickers && item.decoStickers.length > 0 && (
             <View style={styles.decoRow}>
               {item.decoStickers.slice(0, 5).map((d) => {
@@ -169,6 +185,38 @@ export default function DiaryListScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={loading ? null : emptyComponent}
       />
+
+      {/* Full-screen photo preview modal */}
+      <Modal
+        visible={previewPhoto !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewPhoto(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setPreviewPhoto(null)}
+        >
+          <View style={styles.modalContent}>
+            {previewPhoto && (
+              <Image
+                source={{ uri: previewPhoto }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+          <Pressable
+            onPress={() => setPreviewPhoto(null)}
+            style={({ pressed }) => [
+              styles.closeButton,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -206,10 +254,54 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 17, fontWeight: "700" },
   cardDate: { fontSize: 13, marginTop: 2 },
   cardContent: { fontSize: 14, marginTop: 8, lineHeight: 20 },
+  photoRow: { marginTop: 10 },
+  photoThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    marginRight: 8,
+    overflow: "hidden",
+  },
+  photoThumbImage: {
+    width: 64,
+    height: 64,
+  },
   decoRow: { flexDirection: "row", gap: 4, marginTop: 8, alignItems: "center" },
   decoImg: { width: 24, height: 24 },
   decoMore: { fontSize: 12, marginLeft: 4 },
   emptyContainer: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: "700", marginTop: 8 },
   emptySubtitle: { fontSize: 14, textAlign: "center" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.92)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.75,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalImage: {
+    width: SCREEN_WIDTH - 32,
+    height: SCREEN_HEIGHT * 0.7,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+  },
 });

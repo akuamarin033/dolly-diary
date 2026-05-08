@@ -307,7 +307,11 @@ export default function DiaryEditScreen() {
                 placeholderTextColor="#C4A882"
                 value={title}
                 onChangeText={setTitle}
-                returnKeyType="next"
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+                blurOnSubmit={true}
+                returnKeyType="done"
               />
             </View>
 
@@ -520,6 +524,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 16,
     color: "#6B4226",
+    minHeight: 40,
+    maxHeight: 56,
   },
 
   heartsRow: {

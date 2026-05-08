@@ -51,9 +51,13 @@ function DraggablePhotoItem({
   const scale = useSharedValue(1);
   const zIndex = useSharedValue(0);
   const frameSource = POLAROID_FRAMES[index % 3];
-  const photoSize = size * 0.58;
-  const photoOffset = size * 0.13;
-  const photoTop = size * 0.12;
+  // Photo area within polaroid frame (256x300 frame)
+  // Photo area: left=12%, top=11%, width=76%, height=60% of frame height
+  const frameHeight = size * 1.15;
+  const photoWidth = size * 0.76;
+  const photoHeight = frameHeight * 0.60;
+  const photoLeft = size * 0.12;
+  const photoTop = frameHeight * 0.11;
 
   const panGesture = Gesture.Pan()
     .activateAfterLongPress(300)
@@ -131,11 +135,11 @@ function DraggablePhotoItem({
             style={[
               styles.photoOverlay,
               {
-                width: photoSize,
-                height: photoSize,
-                left: photoOffset,
+                width: photoWidth,
+                height: photoHeight,
+                left: photoLeft,
                 top: photoTop,
-                borderRadius: 4,
+                borderRadius: 2,
               },
             ]}
             resizeMode="cover"
