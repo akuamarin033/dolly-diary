@@ -101,10 +101,11 @@ export default function DiaryEditScreen() {
       setPickingPhoto(index);
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
         allowsEditing: false,
         exif: false,
+        selectionLimit: 1,
       });
 
       setPickingPhoto(null);
