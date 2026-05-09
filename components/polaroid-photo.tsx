@@ -17,12 +17,12 @@ interface PolaroidPhotoProps {
 export function PolaroidPhoto({ index, photoUri, onPress, size = 105 }: PolaroidPhotoProps) {
   const frameSource = POLAROID_FRAMES[index % 3];
   // Photo area within polaroid frame (256x300 frame)
-  // Photo area: left=12%, top=11%, width=76%, height=60% of frame height
+  // Photo area: left=8%, top=10%, width=84%, height=72% of frame height
   const frameHeight = size * 1.15;
-  const photoWidth = size * 0.76;
-  const photoHeight = frameHeight * 0.60;
-  const photoLeft = size * 0.12;
-  const photoTop = frameHeight * 0.11;
+  const photoWidth = size * 0.84;
+  const photoHeight = frameHeight * 0.72;
+  const photoLeft = size * 0.08;
+  const photoTop = frameHeight * 0.10;
 
   return (
     <Pressable
