@@ -94,5 +94,5 @@
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
   },
-  "packageManager": "pnpm@9.12.0+sha512.4abf725084d7bcbafbd728bfc7fc8c3c5ec5d8f2e0d917c167c446c462d7c48c6552fef7e8a0c96dfd8e5298e0aedc0d6a9e71e295fd49b6dec5cf73d9c5b7b6a"
+  "packageManager": "pnpm@9.12.0+sha512.4abf725084d7bcbafbd728bfc7bee61f2f791f977fd87542b3579dcb23504d170d46337945e4c66485cd12d588a0c0e570ed9c477e7ccdd8507cf05f3f92eaca"
 }
