@@ -14,28 +14,38 @@ interface PolaroidPhotoProps {
   size?: number; // overall size of the polaroid frame
 }
 
+// Frame-specific photo area percentages based on pixel analysis
+// polaroid1 (271x311): border at top=20, bottom=250, left=17, right=249
+// polaroid2 (270x324): border at top=38, bottom=263, left=18, right=249
+// polaroid3 same as polaroid1
+const FRAME_CONFIGS = [
+  { aspectRatio: 311/271, topPct: 0.075, leftPct: 0.075, widthPct: 0.85, heightPct: 0.73 },  // polaroid1
+  { aspectRatio: 324/270, topPct: 0.13, leftPct: 0.075, widthPct: 0.85, heightPct: 0.68 },   // polaroid2
+  { aspectRatio: 311/271, topPct: 0.075, leftPct: 0.075, widthPct: 0.85, heightPct: 0.73 },  // polaroid3
+];
+
 export function PolaroidPhoto({ index, photoUri, onPress, size = 105 }: PolaroidPhotoProps) {
-  const frameSource = POLAROID_FRAMES[index % 3];
-  // Photo area within polaroid frame (256x300 frame)
-  // Photo area: left=8%, top=10%, width=84%, height=72% of frame height
-  const frameHeight = size * 1.15;
-  const photoWidth = size * 0.84;
-  const photoHeight = frameHeight * 0.72;
-  const photoLeft = size * 0.08;
-  const photoTop = frameHeight * 0.10;
+  const frameIdx = index % 3;
+  const frameSource = POLAROID_FRAMES[frameIdx];
+  const config = FRAME_CONFIGS[frameIdx];
+  const frameHeight = size * config.aspectRatio;
+  const photoWidth = size * config.widthPct;
+  const photoHeight = frameHeight * config.heightPct;
+  const photoLeft = size * config.leftPct;
+  const photoTop = frameHeight * config.topPct;
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        { width: size, height: size * 1.15 },
+        { width: size, height: frameHeight },
         pressed && { opacity: 0.7 },
       ]}
     >
       {/* Frame image as background */}
       <Image
         source={frameSource}
-        style={[styles.frameImage, { width: size, height: size * 1.15 }]}
+        style={[styles.frameImage, { width: size, height: frameHeight }]}
         resizeMode="contain"
       />
       {/* Photo overlay inside the frame */}

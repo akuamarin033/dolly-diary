@@ -50,14 +50,20 @@ function DraggablePhotoItem({
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
   const zIndex = useSharedValue(0);
-  const frameSource = POLAROID_FRAMES[index % 3];
-  // Photo area within polaroid frame (256x300 frame)
-  // Photo area: left=8%, top=10%, width=84%, height=72% of frame height
-  const frameHeight = size * 1.15;
-  const photoWidth = size * 0.84;
-  const photoHeight = frameHeight * 0.72;
-  const photoLeft = size * 0.08;
-  const photoTop = frameHeight * 0.10;
+  const frameIdx = index % 3;
+  const frameSource = POLAROID_FRAMES[frameIdx];
+  // Frame-specific photo area percentages based on pixel analysis
+  const FRAME_CONFIGS = [
+    { aspectRatio: 311/271, topPct: 0.075, leftPct: 0.075, widthPct: 0.85, heightPct: 0.73 },
+    { aspectRatio: 324/270, topPct: 0.13, leftPct: 0.075, widthPct: 0.85, heightPct: 0.68 },
+    { aspectRatio: 311/271, topPct: 0.075, leftPct: 0.075, widthPct: 0.85, heightPct: 0.73 },
+  ];
+  const config = FRAME_CONFIGS[frameIdx];
+  const frameHeight = size * config.aspectRatio;
+  const photoWidth = size * config.widthPct;
+  const photoHeight = frameHeight * config.heightPct;
+  const photoLeft = size * config.leftPct;
+  const photoTop = frameHeight * config.topPct;
 
   const panGesture = Gesture.Pan()
     .activateAfterLongPress(300)
@@ -118,14 +124,14 @@ function DraggablePhotoItem({
     <GestureDetector gesture={composedGesture}>
       <Animated.View
         style={[
-          { width: size, height: size * 1.15 },
+          { width: size, height: frameHeight },
           animatedStyle,
         ]}
       >
         {/* Frame image as background */}
         <Image
           source={frameSource}
-          style={[styles.frameImage, { width: size, height: size * 1.15 }]}
+          style={[styles.frameImage, { width: size, height: frameHeight }]}
           resizeMode="contain"
         />
         {/* Photo overlay inside the frame */}
