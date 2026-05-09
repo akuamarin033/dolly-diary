@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from "react";
-import { Text, View, ScrollView, Pressable, StyleSheet, Alert, Image } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Text, View, ScrollView, Pressable, StyleSheet, Alert, Image, Modal, Dimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -10,12 +10,15 @@ import { getMoodStamp, getWeatherStamp } from "@/lib/mood-stamps";
 import { PolaroidPhoto } from "@/components/polaroid-photo";
 import { useI18n } from "@/lib/i18n";
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 export default function DiaryDetailScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t, language } = useI18n();
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getEntryForDate, removeEntry } = useDiary();
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const entry = useMemo(() => {
     if (!date) return null;
@@ -109,11 +112,17 @@ export default function DiaryDetailScreen() {
           <Text style={styles.dateText}>{entry.date}</Text>
           <Text style={styles.titleText}>{entry.title}</Text>
 
-          {/* Photos polaroid-style */}
+          {/* Photos polaroid-style - tappable for full-screen preview */}
           {entry.photos && entry.photos.length > 0 && (
             <View style={styles.photoRow}>
               {entry.photos.map((uri, i) => (
-                <PolaroidPhoto key={i} index={i} photoUri={uri} size={100} />
+                <PolaroidPhoto
+                  key={i}
+                  index={i}
+                  photoUri={uri}
+                  size={100}
+                  onPress={() => setPreviewPhoto(uri)}
+                />
               ))}
             </View>
           )}
@@ -164,6 +173,38 @@ export default function DiaryDetailScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Full-screen photo preview modal */}
+      <Modal
+        visible={previewPhoto !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewPhoto(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setPreviewPhoto(null)}
+        >
+          <View style={styles.modalContent}>
+            {previewPhoto && (
+              <Image
+                source={{ uri: previewPhoto }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+          <Pressable
+            onPress={() => setPreviewPhoto(null)}
+            style={({ pressed }) => [
+              styles.closeButton,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -302,4 +343,36 @@ const styles = StyleSheet.create({
   timestampText: { fontSize: 12 },
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.92)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.75,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalImage: {
+    width: SCREEN_WIDTH - 32,
+    height: SCREEN_HEIGHT * 0.7,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+  },
 });
