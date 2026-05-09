@@ -108,7 +108,7 @@ export default function ProfileScreen() {
     }
   }, []);
 
-  // === Backup (Export) ===
+  // === Backup (Export) - Local storage only ===
   const handleBackup = useCallback(async () => {
     if (Platform.OS === "web") {
       try {
@@ -127,37 +127,18 @@ export default function ProfileScreen() {
       return;
     }
 
-    // Native: show backup type options first
+    // Native: show backup type options (full or text-only)
     Alert.alert(
       "バックアップの種類を選択",
       "写真を含めると容量が大きくなります",
       [
         {
           text: "完全バックアップ（写真含む）",
-          onPress: () => selectBackupDestination(true),
+          onPress: () => backupToLocalStorage(true),
         },
         {
           text: "テキストのみ（軽量）",
-          onPress: () => selectBackupDestination(false),
-        },
-        { text: "キャンセル", style: "cancel" },
-      ]
-    );
-  }, []);
-
-  // Select backup destination after choosing type
-  const selectBackupDestination = useCallback((includePhotos: boolean) => {
-    Alert.alert(
-      "バックアップ先を選択",
-      "バックアップファイルの保存先を選んでください",
-      [
-        {
-          text: "端末内ストレージ",
-          onPress: () => backupToLocalStorage(includePhotos),
-        },
-        {
-          text: "Google Drive / 共有",
-          onPress: () => backupViaShare(includePhotos),
+          onPress: () => backupToLocalStorage(false),
         },
         { text: "キャンセル", style: "cancel" },
       ]
@@ -208,29 +189,6 @@ export default function ProfileScreen() {
     }
   }, [readFileAsBase64]);
 
-  // Backup via Share sheet (Google Drive, etc.)
-  const backupViaShare = useCallback(async (includePhotos: boolean) => {
-    try {
-      const data = includePhotos
-        ? await exportFullBackup(readFileAsBase64)
-        : await exportAllData();
-      const suffix = includePhotos ? "-full" : "";
-      const fileName = `dollys-diary-backup${suffix}-${new Date().toISOString().slice(0, 10)}.json`;
-      const fileUri = FileSystem.documentDirectory + fileName;
-      await FileSystem.writeAsStringAsync(fileUri, data, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      await Share.share({
-        url: fileUri,
-        title: "Dolly's Diary バックアップ",
-        message: Platform.OS === "android" ? data : undefined,
-      });
-    } catch (e: any) {
-      console.log("Backup via share error:", e?.message || e);
-      Alert.alert("エラー", "バックアップに失敗しました。");
-    }
-  }, [readFileAsBase64]);
-
   // === Restore (Import) ===
   const handleRestore = useCallback(async () => {
     Alert.alert(
@@ -243,10 +201,8 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Use */* to allow Google Drive files to be selectable
-              // Google Drive may not recognize application/json for .json files
               const result = await DocumentPicker.getDocumentAsync({
-                type: "*/*",
+                type: "application/json",
                 copyToCacheDirectory: true,
               });
 
@@ -269,25 +225,10 @@ export default function ProfileScreen() {
                 const response = await fetch(asset.uri);
                 jsonStr = await response.text();
               } else {
-                // Native: copy to local cache first, then read
-                // This ensures Google Drive / cloud files are fully downloaded
-                const localPath = FileSystem.cacheDirectory + `restore-${Date.now()}.json`;
-                try {
-                  await FileSystem.copyAsync({
-                    from: asset.uri,
-                    to: localPath,
-                  });
-                  jsonStr = await FileSystem.readAsStringAsync(localPath, {
-                    encoding: FileSystem.EncodingType.UTF8,
-                  });
-                  // Clean up temp file
-                  await FileSystem.deleteAsync(localPath, { idempotent: true });
-                } catch (copyErr) {
-                  // Fallback: try reading directly
-                  jsonStr = await FileSystem.readAsStringAsync(asset.uri, {
-                    encoding: FileSystem.EncodingType.UTF8,
-                  });
-                }
+                // Native: read from local cache
+                jsonStr = await FileSystem.readAsStringAsync(asset.uri, {
+                  encoding: FileSystem.EncodingType.UTF8,
+                });
               }
 
               const success = await importAllData(jsonStr, writeFileFromBase64);
