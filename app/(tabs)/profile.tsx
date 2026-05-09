@@ -18,6 +18,13 @@ import { useAds } from "@/lib/ad-context";
 import { useConsent } from "@/lib/consent-context";
 import { useI18n } from "@/lib/i18n";
 
+interface BackupFileInfo {
+  name: string;
+  uri: string;
+  size: number;
+  modifiedTime: number;
+}
+
 export default function ProfileScreen() {
   const colors = useColors();
   const { entries, streak, reload } = useDiary();
@@ -28,6 +35,8 @@ export default function ProfileScreen() {
   const [passcodeEnabled, setPasscodeEnabled] = useState(false);
   const [showPasscodeSetup, setShowPasscodeSetup] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
+  const [backupFiles, setBackupFiles] = useState<BackupFileInfo[]>([]);
+  const [showBackupList, setShowBackupList] = useState(false);
 
   // Stats
   const totalEntries = entries.length;
@@ -169,9 +178,12 @@ export default function ProfileScreen() {
         await FileSystem.writeAsStringAsync(fileUri, data, {
           encoding: FileSystem.EncodingType.UTF8,
         });
-        Alert.alert("完了", includePhotos
-          ? "写真を含む完全バックアップを端末内に保存しました。"
-          : "バックアップを端末内に保存しました。");
+        Alert.alert(
+          "完了",
+          includePhotos
+            ? `写真を含む完全バックアップを保存しました。\n\nファイル名: ${fileName}\n保存先: 選択したフォルダ`
+            : `バックアップを保存しました。\n\nファイル名: ${fileName}\n保存先: 選択したフォルダ`
+        );
       } else {
         // iOS: Save to document directory and share
         const fileUri = FileSystem.documentDirectory + fileName;
@@ -183,11 +195,111 @@ export default function ProfileScreen() {
           title: "Dolly's Diary バックアップ",
         });
       }
+      // Refresh backup file list
+      await loadBackupFiles();
     } catch (e: any) {
       console.log("Backup to local error:", e?.message || e);
       Alert.alert("エラー", "バックアップに失敗しました。");
     }
   }, [readFileAsBase64]);
+
+  // Load backup files from app document directory
+  const loadBackupFiles = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    try {
+      const dir = FileSystem.documentDirectory || "";
+      const files = await FileSystem.readDirectoryAsync(dir);
+      const backups: BackupFileInfo[] = [];
+      for (const file of files) {
+        if (file.startsWith("dollys-diary-backup") && file.endsWith(".json")) {
+          const uri = dir + file;
+          const info = await FileSystem.getInfoAsync(uri);
+          if (info.exists && !info.isDirectory) {
+            backups.push({
+              name: file,
+              uri,
+              size: info.size || 0,
+              modifiedTime: info.modificationTime || 0,
+            });
+          }
+        }
+      }
+      // Sort by modified time descending (newest first)
+      backups.sort((a, b) => b.modifiedTime - a.modifiedTime);
+      setBackupFiles(backups);
+    } catch (e) {
+      console.log("loadBackupFiles error:", e);
+    }
+  }, []);
+
+  // Delete a backup file
+  const handleDeleteBackup = useCallback(async (file: BackupFileInfo) => {
+    Alert.alert(
+      "バックアップを削除",
+      `「${file.name}」を削除しますか？\nこの操作は取り消せません。`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await FileSystem.deleteAsync(file.uri, { idempotent: true });
+              await loadBackupFiles();
+              Alert.alert("完了", "バックアップファイルを削除しました。");
+            } catch (e) {
+              Alert.alert("エラー", "削除に失敗しました。");
+            }
+          },
+        },
+      ]
+    );
+  }, [loadBackupFiles]);
+
+  // Restore from a specific backup file in app directory
+  const handleRestoreFromFile = useCallback(async (file: BackupFileInfo) => {
+    Alert.alert(
+      "データを復元",
+      `「${file.name}」から復元します。\n現在のデータは上書きされます。`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "復元する",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const jsonStr = await FileSystem.readAsStringAsync(file.uri, {
+                encoding: FileSystem.EncodingType.UTF8,
+              });
+              const success = await importAllData(jsonStr, writeFileFromBase64);
+              if (success) {
+                if (reload) await reload();
+                Alert.alert("完了", "データを復元しました。アプリを再起動すると完全に反映されます。");
+              } else {
+                Alert.alert("エラー", "バックアップファイルの形式が正しくありません。");
+              }
+            } catch (e: any) {
+              Alert.alert("エラー", "復元に失敗しました。\n" + (e?.message || ""));
+            }
+          },
+        },
+      ]
+    );
+  }, [reload, writeFileFromBase64]);
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Format date from timestamp
+  const formatDate = (timestamp: number): string => {
+    if (!timestamp) return "";
+    const d = new Date(timestamp * 1000);
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
 
   // === Restore (Import) ===
   const handleRestore = useCallback(async () => {
@@ -366,6 +478,82 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </Pressable>
+
+          {Platform.OS !== "web" && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+              {/* Backup file list toggle */}
+              <Pressable
+                onPress={() => {
+                  if (!showBackupList) loadBackupFiles();
+                  setShowBackupList(!showBackupList);
+                }}
+                style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={{ fontSize: 22 }}>🗂️</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={[styles.settingTitle, { color: colors.foreground }]}>バックアップ一覧</Text>
+                  <Text style={[styles.settingSubtitle, { color: colors.muted }]}>
+                    保存済みファイルの管理・復元・削除
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 16, color: colors.muted }}>{showBackupList ? "▲" : "▼"}</Text>
+              </Pressable>
+
+              {showBackupList && (
+                <View style={{ marginTop: 12 }}>
+                  {backupFiles.length === 0 ? (
+                    <Text style={[styles.settingSubtitle, { color: colors.muted, textAlign: "center", paddingVertical: 12 }]}>
+                      バックアップファイルがありません
+                    </Text>
+                  ) : (
+                    backupFiles.map((file, idx) => (
+                      <View
+                        key={file.uri}
+                        style={[
+                          styles.backupFileRow,
+                          { borderColor: colors.border },
+                          idx > 0 && { marginTop: 8 },
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.backupFileName, { color: colors.foreground }]} numberOfLines={1}>
+                            {file.name}
+                          </Text>
+                          <Text style={[styles.backupFileMeta, { color: colors.muted }]}>
+                            {formatFileSize(file.size)} ・ {formatDate(file.modifiedTime)}
+                          </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", gap: 8 }}>
+                          <Pressable
+                            onPress={() => handleRestoreFromFile(file)}
+                            style={({ pressed }) => [
+                              styles.backupFileBtn,
+                              { backgroundColor: colors.primary + "22" },
+                              pressed && { opacity: 0.7 },
+                            ]}
+                          >
+                            <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>復元</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => handleDeleteBackup(file)}
+                            style={({ pressed }) => [
+                              styles.backupFileBtn,
+                              { backgroundColor: colors.error + "22" },
+                              pressed && { opacity: 0.7 },
+                            ]}
+                          >
+                            <Text style={{ fontSize: 12, color: colors.error, fontWeight: "600" }}>削除</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+            </>
+          )}
         </View>
 
         {/* Ad removal section */}
@@ -538,4 +726,8 @@ const styles = StyleSheet.create({
   premiumBadgeText: { fontSize: 13, fontWeight: "700" },
   langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   langBadgeText: { fontSize: 13, fontWeight: "700" },
+  backupFileRow: { flexDirection: "row", alignItems: "center", padding: 10, borderRadius: 10, borderWidth: 1 },
+  backupFileName: { fontSize: 13, fontWeight: "600" },
+  backupFileMeta: { fontSize: 11, marginTop: 2 },
+  backupFileBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
 });
